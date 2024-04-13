@@ -1,9 +1,18 @@
 import pygame
+import random
 
 from pygame.locals import QUIT, MOUSEBUTTONDOWN
 
 from consts import *
 from sprites import Enemy, Player
+
+
+def generate_room(all_enemies, all_sprites):
+    for sprite in all_sprites:
+        sprite.kill()
+    for _ in range(random.randint(1, 5)):
+        Enemy((random.randint(0, SCREEN_WIDTH), random.randint(0, SCREEN_HEIGHT)), all_enemies, all_sprites)
+
 
 pygame.init()
 
@@ -14,6 +23,9 @@ all_enemies = pygame.sprite.Group()
 all_players = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
 
+# Room init
+generate_room(all_enemies, all_sprites)
+
 running = True
 while running:
     for event in pygame.event.get():
@@ -23,7 +35,7 @@ while running:
             if event.button == MOUSE_LEFT_CLICK:
                 Player(event.pos, all_players, all_sprites)
             elif event.button == MOUSE_RIGHT_CLICK:
-                Enemy(event.pos, all_enemies, all_sprites)
+                generate_room(all_enemies, all_sprites)
 
     screen.fill((200, 200, 200))
 

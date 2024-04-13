@@ -20,7 +20,7 @@ class Player(pygame.sprite.Sprite):
             if dist:
                 vec = dist.normalize() * 5
                 self.rect.move_ip(vec)
-
+            pygame.sprite.spritecollide(self, all_enemies, True)
         self.rect.clamp_ip(screen_rect)
 
     def draw(self, screen):
@@ -37,7 +37,7 @@ class Enemy(pygame.sprite.Sprite):
         self.rect = self.surf.get_rect(center=centerpos)
 
     def update(self, screen_rect, all_players):
-        pass
+        self.rect.clamp_ip(screen_rect)
 
     def draw(self, screen):
         screen.blit(self.surf, self.rect)
