@@ -142,3 +142,37 @@ class PlayableUnitsText(TextArea):
         self.set_text(
             f"{self.class_type.name.capitalize()} units: {gamestate.playable_units[self.class_type]}"
         )
+
+
+class TitleScreenArrow(pygame.sprite.Sprite):
+    def __init__(self, arrow_type, class_type, *groups, **pos):
+        super().__init__(*groups)
+        self.arrow_type = arrow_type
+        self.class_type = class_type
+        self.surf = pygame.Surface((15, 15))
+        self.surf.fill((0, 0, 0))
+        if "topleft" in pos:
+            self.rect = self.surf.get_rect(topleft=pos["topleft"])
+        elif "center" in pos:
+            self.rect = self.surf.get_rect(center=pos["center"])
+        else:
+            self.rect = self.surf.get_rect()
+
+    def handle_click(self, game):
+        if sum(game.playable_units.values()) + self.arrow_type > 5:
+            return
+        game.playable_units[self.class_type] += self.arrow_type
+        if game.playable_units[self.class_type] < 0:
+            game.playable_units[self.class_type] = 0
+
+    def draw(self, screen):
+        screen.blit(self.surf, self.rect)
+
+
+class TitleScreenPlayableUnitsText(TextArea):
+    def __init__(self, font: pygame.font.Font, class_type, *groups, **pos):
+        super().__init__(font, "0", *groups, **pos)
+        self.class_type = class_type
+
+    def update(self, game):
+        self.set_text(f"{game.playable_units[self.class_type]}")
