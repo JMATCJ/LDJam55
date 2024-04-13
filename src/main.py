@@ -38,15 +38,6 @@ while running:
         enemy.update(all_players)
         enemy.draw(screen)
 
-    # for sprite in all_sprites:
-    #     sprite.update()
-
-    #     # if pygame.sprite.collide_rect(enemy):
-    #     #     enemy.rect.move_ip(-250, 0)
-    #     #     player.rect.move_ip(250, 0)
-
-    #     sprite.draw(screen)
-
     pygame.display.update()
     clock.tick(60)
 
