@@ -1,6 +1,26 @@
 import pygame
+import enum
 
+from pygame.font import Font
 from pygame.math import Vector2
+
+
+class Class(enum.Enum):
+    WARRIOR = enum.auto()
+    RANGER = enum.auto()
+    MAGE = enum.auto()
+    ENEMY = enum.auto()
+
+    def create_new(self, centerpos: tuple[int, int], *groups):
+        match self:
+            case self.WARRIOR:
+                return Warrior(centerpos, *groups)
+            case self.RANGER:
+                return Ranger(centerpos, *groups)
+            case self.MAGE:
+                return Mage(centerpos, *groups)
+            case self.ENEMY:
+                return Enemy(centerpos, *groups)
 
 
 class Unit(pygame.sprite.Sprite):
@@ -86,3 +106,16 @@ class TextArea(pygame.sprite.Sprite):
 
     def set_text(self, text: str):
         self.text = self.font.render(text, True, (0, 0, 0))
+
+
+class PlayableUnitsText(TextArea):
+    def __init__(self, font: pygame.font.Font, class_type: Class, *groups, **pos):
+        super().__init__(
+            font, f"{class_type.name.capitalize()} units: 0", *groups, **pos
+        )
+        self.class_type = class_type
+
+    def update(self, gamestate):
+        self.set_text(
+            f"{self.class_type.name.capitalize()} units: {gamestate.playable_units[self.class_type]}"
+        )
