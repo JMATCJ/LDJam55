@@ -2,64 +2,77 @@ import pygame
 
 from pygame.math import Vector2
 
-from enums import Classes
 
-
-class Player(pygame.sprite.Sprite):
-
-    def __init__(self, centerpos: tuple[int, int], selected_unit: Classes, *groups):
+class Unit(pygame.sprite.Sprite):
+    def __init__(self, centerpos: tuple[int, int], color: tuple[int, int, int], *groups):
         super().__init__(*groups)
 
         self.surf = pygame.Surface((25, 50))
-        if selected_unit == Classes.WARRIOR:
-            self.surf.fill((153, 76, 0))
-        elif selected_unit == Classes.RANGER:
-            self.surf.fill((76, 153, 0))
-        elif selected_unit == Classes.MAGE:
-            self.surf.fill((0, 255, 255))
-        else:
-            self.surf.fill((0, 0, 0))
+        self.surf.fill(color)
         self.rect = self.surf.get_rect(center=centerpos)
-
-    def update(self, screen_rect, all_enemies: pygame.sprite.Group):
-        if all_enemies:
-            p_pos = Vector2(self.rect.center)
-            enemy = min([e for e in all_enemies], key=lambda e: p_pos.distance_to(Vector2(e.rect.center)))
-            e_pos = Vector2(enemy.rect.center)
-            dist = e_pos - p_pos
-            if dist:
-                vec = dist.normalize() * 5
-                self.rect.move_ip(vec)
-            pygame.sprite.spritecollide(self, all_enemies, True)
-        self.rect.clamp_ip(screen_rect)
-
-    def draw(self, screen):
-        screen.blit(self.surf, self. rect)
-
-
-class Enemy(pygame.sprite.Sprite):
-    def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(*groups)
-
-        self.surf = pygame.Surface((25, 50))
-        self.surf.fill((255, 0, 0))
-        self.rect = self.surf.get_rect(center=centerpos)
-
-    def update(self, screen_rect, all_players):
-        self.rect.clamp_ip(screen_rect)
+        self.speed = 5
 
     def draw(self, screen):
         screen.blit(self.surf, self.rect)
 
+    def move_nearest_ip(self, group: pygame.sprite.Group):
+        if group:
+            cur_pos = Vector2(self.rect.center)
+            nearest = min([e for e in group], key=lambda e: cur_pos.distance_to(Vector2(e.rect.center)))
+            nearest_pos = Vector2(nearest.rect.center)
+            dist = nearest_pos - cur_pos
+            if dist:
+                vec = dist.normalize() * self.speed
+                self.rect.move_ip(vec)
+
+
+class Warrior(Unit):
+    def __init__(self, centerpos: tuple[int, int], *groups):
+        super().__init__(centerpos, (153, 76, 0), *groups)
+
+    def update(self, screen_rect, all_enemies):
+        self.move_nearest_ip(all_enemies)
+        pygame.sprite.spritecollide(self, all_enemies, True)
+        self.rect.clamp_ip(screen_rect)
+
+
+class Ranger(Unit):
+    def __init__(self, centerpos: tuple[int, int], *groups):
+        super().__init__(centerpos, (76, 153, 0), *groups)
+
+    def update(self, screen_rect, all_enemies):
+        self.move_nearest_ip(all_enemies)
+        pygame.sprite.spritecollide(self, all_enemies, True)
+        self.rect.clamp_ip(screen_rect)
+
+
+class Mage(Unit):
+    def __init__(self, centerpos: tuple[int, int], *groups):
+        super().__init__(centerpos, (0, 255, 255), *groups)
+
+    def update(self, screen_rect, all_enemies):
+        self.move_nearest_ip(all_enemies)
+        pygame.sprite.spritecollide(self, all_enemies, True)
+        self.rect.clamp_ip(screen_rect)
+
+
+class Enemy(Unit):
+    def __init__(self, centerpos: tuple[int, int], *groups):
+        super().__init__(centerpos, (255, 0, 0), *groups)
+
+    def update(self, screen_rect, all_players):
+        self.rect.clamp_ip(screen_rect)
+
 
 class TextArea(pygame.sprite.Sprite):
-    # Besides value and font_size, takes a third parameter for its position, which must be keyworded.
+    # Besides font and value, takes a third parameter for its position, which must be keyworded.
     # Either specify "topleft" or "center", followed by the tuple position.
     # Examples: TextArea(font, "test value", group, topleft=(10, 10))
     #           TextArea(font, "new value", group, center=(20, 30))
     def __init__(self, font: pygame.font.Font, value: str, *groups, **pos):
         super().__init__(*groups)
         self.font = font
+        self.text: pygame.Surface | None = None
         self.set_text(value)
         if "topleft" in pos:
             self.rect = self.text.get_rect(topleft=pos["topleft"])

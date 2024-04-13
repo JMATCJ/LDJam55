@@ -4,8 +4,8 @@ import random
 from pygame.locals import QUIT, KEYDOWN, MOUSEBUTTONDOWN, K_1, K_2, K_3
 
 from consts import *
-from sprites import Enemy, Player, TextArea
-from enums import Classes
+from sprites import Enemy, TextArea
+from enums import Class
 
 
 def generate_room(all_enemies, all_entities):
@@ -30,25 +30,25 @@ all_players = pygame.sprite.Group()
 all_text = pygame.sprite.Group()
 all_entities = pygame.sprite.Group()
 
-player_units = {Classes.WARRIOR: 1, Classes.RANGER: 1, Classes.MAGE: 1}
-selected_unit = Classes.WARRIOR
+player_units = {Class.WARRIOR: 1, Class.RANGER: 1, Class.MAGE: 1}
+selected_unit = Class.WARRIOR
 
 warrior_text = TextArea(
     font,
-    f"Warrior units: {player_units[Classes.WARRIOR]}",
+    f"Warrior units: {player_units[Class.WARRIOR]}",
     all_text,
     topleft=(10, 10),
 )
 
 ranger_text = TextArea(
     font,
-    f"Ranger units: {player_units[Classes.RANGER]}",
+    f"Ranger units: {player_units[Class.RANGER]}",
     all_text,
     topleft=(10, 30),
 )
 
 mage_text = TextArea(
-    font, f"Mage units: {player_units[Classes.MAGE]}", all_text, topleft=(10, 50)
+    font, f"Mage units: {player_units[Class.MAGE]}", all_text, topleft=(10, 50)
 )
 
 
@@ -63,27 +63,27 @@ while running:
         elif event.type == MOUSEBUTTONDOWN:
             if event.button == MOUSE_LEFT_CLICK:
                 if player_units[selected_unit] > 0:
-                    Player(event.pos, selected_unit, all_players, all_entities)
+                    selected_unit.create_new(event.pos, all_players, all_entities)
                     player_units[selected_unit] -= 1
-                    if selected_unit == Classes.WARRIOR:
+                    if selected_unit == Class.WARRIOR:
                         warrior_text.set_text(
-                            f"Warrior units: {player_units[Classes.WARRIOR]}"
+                            f"Warrior units: {player_units[Class.WARRIOR]}"
                         )
-                    elif selected_unit == Classes.RANGER:
+                    elif selected_unit == Class.RANGER:
                         ranger_text.set_text(
-                            f"Ranger units: {player_units[Classes.RANGER]}"
+                            f"Ranger units: {player_units[Class.RANGER]}"
                         )
-                    elif selected_unit == Classes.MAGE:
-                        mage_text.set_text(f"Mage units: {player_units[Classes.MAGE]}")
+                    elif selected_unit == Class.MAGE:
+                        mage_text.set_text(f"Mage units: {player_units[Class.MAGE]}")
             elif event.button == MOUSE_RIGHT_CLICK:
                 generate_room(all_enemies, all_entities)
         elif event.type == KEYDOWN:
             if event.key == K_1:
-                selected_unit = Classes.WARRIOR
+                selected_unit = Class.WARRIOR
             if event.key == K_2:
-                selected_unit = Classes.RANGER
+                selected_unit = Class.RANGER
             if event.key == K_3:
-                selected_unit = Classes.MAGE
+                selected_unit = Class.MAGE
 
     screen.fill((200, 200, 200))
 
