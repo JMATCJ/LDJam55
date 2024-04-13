@@ -2,12 +2,15 @@ import enum
 import pygame
 from pygame.math import Vector2
 
+from consts import *
+
 
 class Class(enum.Enum):
     WARRIOR = enum.auto()
     RANGER = enum.auto()
     MAGE = enum.auto()
-    ENEMY = enum.auto()
+    SKELETON = enum.auto()
+    ZOMBIE = enum.auto()
 
     def create_new(self, centerpos: tuple[int, int], *groups):
         match self:
@@ -17,12 +20,14 @@ class Class(enum.Enum):
                 return Ranger(centerpos, *groups)
             case self.MAGE:
                 return Mage(centerpos, *groups)
-            case self.ENEMY:
-                return Enemy(centerpos, *groups)
+            case self.SKELETON:
+                return Skeleton(centerpos, *groups)
+            case self.ZOMBIE:
+                return Zombie(centerpos, *groups)
 
 
 class Unit(pygame.sprite.Sprite):
-    def __init__(self, centerpos: tuple[int, int], color: tuple[int, int, int], health: int, attack: int, speed: int, *groups):
+    def __init__(self, centerpos: tuple[int, int], image_folder_name: str, health: int, attack: int, speed: int, *groups):
         super().__init__(*groups)
 
         # Stats
@@ -31,9 +36,14 @@ class Unit(pygame.sprite.Sprite):
         self.speed = speed
         self.time_since_last_attack = 0
 
-        # Visuals
-        self.surf = pygame.Surface((25, 50))
-        self.surf.fill(color)
+        # Surfaces
+        self.standing_surf = pygame.transform.smoothscale(pygame.image.load(ASSETS_DIR / image_folder_name / "standing.png").convert_alpha(), (64, 64))
+        self.attacking_surf = pygame.transform.smoothscale(pygame.image.load(ASSETS_DIR / image_folder_name / "attacking.png").convert_alpha(), (64, 64))
+        self.walking_1_surf = pygame.transform.smoothscale(pygame.image.load(ASSETS_DIR / image_folder_name / "walking_1.png").convert_alpha(),(64, 64))
+        self.walking_2_surf = pygame.transform.smoothscale(pygame.image.load(ASSETS_DIR / image_folder_name / "walking_2.png").convert_alpha(), (64, 64))
+
+        # The surface that should be currently drawn
+        self.surf = self.standing_surf
         self.rect = self.surf.get_rect(center=centerpos)
 
     def update(self, screen_rect, group, delta_time):
@@ -66,7 +76,7 @@ class Unit(pygame.sprite.Sprite):
 
 class Warrior(Unit):
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, (153, 76, 0), 5, 2, 5, *groups)
+        super().__init__(centerpos, "knight", 5, 2, 5, *groups)
 
     def update(self, screen_rect, all_enemies, delta_time):
         super().update(screen_rect, all_enemies, delta_time)
@@ -77,7 +87,7 @@ class Warrior(Unit):
 
 class Ranger(Unit):
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, (76, 153, 0), 3, 3, 6, *groups)
+        super().__init__(centerpos, "ranger", 3, 3, 6, *groups)
 
     def update(self, screen_rect, all_enemies, delta_time):
         super().update(screen_rect, all_enemies, delta_time)
@@ -88,7 +98,7 @@ class Ranger(Unit):
 
 class Mage(Unit):
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, (0, 255, 255), 1, 5, 4, *groups)
+        super().__init__(centerpos, "mage", 1, 5, 4, *groups)
 
     def update(self, screen_rect, all_enemies, delta_time):
         super().update(screen_rect, all_enemies, delta_time)
@@ -97,9 +107,19 @@ class Mage(Unit):
         self.attack_one(all_enemies)
 
 
-class Enemy(Unit):
+class Skeleton(Unit):
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, (255, 0, 0), 3, 1, 3, *groups)
+        super().__init__(centerpos, "skeleton", 3, 1, 3, *groups)
+
+    def update(self, screen_rect, all_players, delta_time):
+        super().update(screen_rect, all_players, delta_time)
+        self.rect.clamp_ip(screen_rect)
+        self.attack_one(all_players)
+
+
+class Zombie(Unit):
+    def __init__(self, centerpos: tuple[int, int], *groups):
+        super().__init__(centerpos, "zombie", 2, 2, 1, *groups)
 
     def update(self, screen_rect, all_players, delta_time):
         super().update(screen_rect, all_players, delta_time)

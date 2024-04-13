@@ -5,7 +5,8 @@ import random
 
 from consts import *
 from sprites import (
-    Enemy,
+    Skeleton,
+    Zombie,
     TitleScreenArrow,
     TitleScreenPlayableUnitsText,
     TextArea,
@@ -40,11 +41,18 @@ class GameState:
         for entity in self.all_entities:
             entity.kill()
         for _ in range(random.randint(1, 5)):
-            Enemy(
-                (random.randint(0, SCREEN_WIDTH), random.randint(0, SCREEN_HEIGHT)),
-                self.all_enemies,
-                self.all_entities,
-            )
+            if random.random() < 0.5:
+                Skeleton(
+                    (random.randint(0, SCREEN_WIDTH), random.randint(0, SCREEN_HEIGHT)),
+                    self.all_enemies,
+                    self.all_entities,
+                )
+            else:
+                Zombie(
+                    (random.randint(0, SCREEN_WIDTH), random.randint(0, SCREEN_HEIGHT)),
+                    self.all_enemies,
+                    self.all_entities,
+                )
 
     def spawn_playable_unit(self, pos):
         if self.playable_units[self.selected_unit] > 0:
