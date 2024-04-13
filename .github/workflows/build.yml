@@ -1,0 +1,44 @@
+name: Build Windows & macOS Apps
+
+on:
+  push:
+    branches: ['main']
+
+jobs:
+  build:
+    name: Build Application
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            TARGET: Windows
+            ARTIFACT_NAME: LDJam55_Windows
+            OUT_FILE_NAME: LDJam55.exe
+            CMD_BUILD: pyinstaller -F -w -n LDJam55 --add-data "assets;assets" src/main.py
+          - os: macos-12
+            TARGET: macOS
+            ARTIFACT_NAME: LDJam55_macOS_x86
+            OUT_FILE_NAME: LDJam55.app
+            CMD_BUILD: >
+              pyinstaller -F -w -n LDJam55 --osx-bundle-identifier "com.github.jmatcj.ld55" --add-data "assets:assets" src/main.py &&
+              cd dist/ &&
+              zip -r9 LDJam55 LDJam55.app/
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Build ${{matrix.TARGET}} App
+        run: ${{matrix.CMD_BUILD}}
+      - name: Upload App
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{matrix.ARTIFACT_NAME}}
+          path: ./dist/${{matrix.OUT_FILE_NAME}}
