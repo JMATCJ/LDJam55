@@ -10,10 +10,9 @@ pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 clock = pygame.time.Clock()
 
-enemy = Enemy()
-
+all_enemies = pygame.sprite.Group()
+all_players = pygame.sprite.Group()
 all_sprites = pygame.sprite.Group()
-all_sprites.add(enemy)
 
 running = True
 while running:
@@ -22,18 +21,31 @@ while running:
             running = False
         elif event.type == MOUSEBUTTONDOWN and event.button == MOUSE_LEFT_CLICK:
             player = Player(event.pos)
+            all_players.add(player)
             all_sprites.add(player)
+        elif event.type == MOUSEBUTTONDOWN and event.button == MOUSE_RIGHT_CLICK:
+            enemy = Enemy(event.pos)
+            all_enemies.add(enemy)
+            all_sprites.add(enemy)
 
     screen.fill((200, 200, 200))
 
-    for sprite in all_sprites:
-        sprite.update()
+    for player in all_players:
+        player.update(all_enemies)
+        player.draw(screen)
 
-        # if pygame.sprite.collide_rect(enemy):
-        #     enemy.rect.move_ip(-250, 0)
-        #     player.rect.move_ip(250, 0)
+    for enemy in all_enemies:
+        enemy.update(all_players)
+        enemy.draw(screen)
 
-        sprite.draw(screen)
+    # for sprite in all_sprites:
+    #     sprite.update()
+
+    #     # if pygame.sprite.collide_rect(enemy):
+    #     #     enemy.rect.move_ip(-250, 0)
+    #     #     player.rect.move_ip(250, 0)
+
+    #     sprite.draw(screen)
 
     pygame.display.update()
     clock.tick(60)
