@@ -1,7 +1,5 @@
-import pygame
 import enum
-
-from pygame.font import Font
+import pygame
 from pygame.math import Vector2
 
 
@@ -24,13 +22,22 @@ class Class(enum.Enum):
 
 
 class Unit(pygame.sprite.Sprite):
-    def __init__(self, centerpos: tuple[int, int], color: tuple[int, int, int], *groups):
+    def __init__(self, centerpos: tuple[int, int], color: tuple[int, int, int], health: int, attack: int, speed: int, *groups):
         super().__init__(*groups)
 
+        # Stats
+        self.health = health
+        self.attack = attack
+        self.speed = speed
+        self.time_since_last_attack = 0
+
+        # Visuals
         self.surf = pygame.Surface((25, 50))
         self.surf.fill(color)
         self.rect = self.surf.get_rect(center=centerpos)
-        self.speed = 5
+
+    def update(self, screen_rect, group, delta_time):
+        self.time_since_last_attack += delta_time
 
     def draw(self, screen):
         screen.blit(self.surf, self.rect)
@@ -43,45 +50,61 @@ class Unit(pygame.sprite.Sprite):
             dist = nearest_pos - cur_pos
             if dist:
                 vec = dist.normalize() * self.speed
-                self.rect.move_ip(vec)
+                if not pygame.sprite.spritecollideany(self, group):
+                    self.rect.move_ip(vec)
+
+    def attack_one(self, group: pygame.sprite.Group):
+        if self.time_since_last_attack >= 2000:
+            attacked: Unit = pygame.sprite.spritecollideany(self, group)
+            if attacked:
+                attacked.health -= self.attack
+                if attacked.health <= 0:
+                    attacked.kill()
+                self.time_since_last_attack = 0
+                print(f"{type(self)} health: {self.health} | {type(attacked)} health: {attacked.health}")
 
 
 class Warrior(Unit):
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, (153, 76, 0), *groups)
+        super().__init__(centerpos, (153, 76, 0), 5, 2, 5, *groups)
 
-    def update(self, screen_rect, all_enemies):
+    def update(self, screen_rect, all_enemies, delta_time):
+        super().update(screen_rect, all_enemies, delta_time)
         self.move_nearest_ip(all_enemies)
-        pygame.sprite.spritecollide(self, all_enemies, True)
         self.rect.clamp_ip(screen_rect)
+        self.attack_one(all_enemies)
 
 
 class Ranger(Unit):
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, (76, 153, 0), *groups)
+        super().__init__(centerpos, (76, 153, 0), 3, 3, 6, *groups)
 
-    def update(self, screen_rect, all_enemies):
+    def update(self, screen_rect, all_enemies, delta_time):
+        super().update(screen_rect, all_enemies, delta_time)
         self.move_nearest_ip(all_enemies)
-        pygame.sprite.spritecollide(self, all_enemies, True)
         self.rect.clamp_ip(screen_rect)
+        self.attack_one(all_enemies)
 
 
 class Mage(Unit):
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, (0, 255, 255), *groups)
+        super().__init__(centerpos, (0, 255, 255), 1, 5, 4, *groups)
 
-    def update(self, screen_rect, all_enemies):
+    def update(self, screen_rect, all_enemies, delta_time):
+        super().update(screen_rect, all_enemies, delta_time)
         self.move_nearest_ip(all_enemies)
-        pygame.sprite.spritecollide(self, all_enemies, True)
         self.rect.clamp_ip(screen_rect)
+        self.attack_one(all_enemies)
 
 
 class Enemy(Unit):
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, (255, 0, 0), *groups)
+        super().__init__(centerpos, (255, 0, 0), 3, 1, 3, *groups)
 
-    def update(self, screen_rect, all_players):
+    def update(self, screen_rect, all_players, delta_time):
+        super().update(screen_rect, all_players, delta_time)
         self.rect.clamp_ip(screen_rect)
+        self.attack_one(all_players)
 
 
 class TextArea(pygame.sprite.Sprite):

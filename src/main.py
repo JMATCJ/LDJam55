@@ -1,8 +1,7 @@
-import pygame
-import random
 import enum
-
+import pygame
 from pygame.locals import QUIT, KEYDOWN, MOUSEBUTTONDOWN, K_1, K_2, K_3
+import random
 
 from consts import *
 from sprites import Enemy, PlayableUnitsText, Class
@@ -53,10 +52,10 @@ class GameState:
 
             self.generate_room()
 
-    def update(self, screen):
+    def update(self, screen, delta_time):
         if self.screen_state == GameState.States.GAME_SCREEN:
-            self.all_players.update(screen.get_rect(), self.all_enemies)
-            self.all_enemies.update(screen.get_rect(), self.all_players)
+            self.all_players.update(screen.get_rect(), self.all_enemies, delta_time)
+            self.all_enemies.update(screen.get_rect(), self.all_players, delta_time)
             self.all_text.update(self)
 
     def draw(self, screen):
@@ -75,6 +74,7 @@ clock = pygame.time.Clock()
 game = GameState(GameState.States.GAME_SCREEN, False)
 
 running = True
+delta_time = 0
 while running:
     for event in pygame.event.get():
         if event.type == QUIT:
@@ -92,12 +92,12 @@ while running:
             if event.key == K_3:
                 game.selected_unit = Class.MAGE
 
-    screen.fill((200, 200, 200))
+    game.update(screen, delta_time)
 
-    game.update(screen)
+    screen.fill((200, 200, 200))
     game.draw(screen)
 
     pygame.display.update()
-    clock.tick(60)
+    delta_time = clock.tick(60)
 
 pygame.quit()
