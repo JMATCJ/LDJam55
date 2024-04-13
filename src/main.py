@@ -19,24 +19,19 @@ while running:
     for event in pygame.event.get():
         if event.type == QUIT:
             running = False
-        elif event.type == MOUSEBUTTONDOWN and event.button == MOUSE_LEFT_CLICK:
-            player = Player(event.pos)
-            all_players.add(player)
-            all_sprites.add(player)
-        elif event.type == MOUSEBUTTONDOWN and event.button == MOUSE_RIGHT_CLICK:
-            enemy = Enemy(event.pos)
-            all_enemies.add(enemy)
-            all_sprites.add(enemy)
+        elif event.type == MOUSEBUTTONDOWN:
+            if event.button == MOUSE_LEFT_CLICK:
+                Player(event.pos, all_players, all_sprites)
+            elif event.button == MOUSE_RIGHT_CLICK:
+                Enemy(event.pos, all_enemies, all_sprites)
 
     screen.fill((200, 200, 200))
 
-    for player in all_players:
-        player.update(all_enemies)
-        player.draw(screen)
+    all_players.update(screen.get_rect(), all_enemies)
+    all_enemies.update(screen.get_rect(), all_players)
 
-    for enemy in all_enemies:
-        enemy.update(all_players)
-        enemy.draw(screen)
+    for sprite in all_sprites:
+        sprite.draw(screen)
 
     pygame.display.update()
     clock.tick(60)
