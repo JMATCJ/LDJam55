@@ -16,6 +16,7 @@ from sprites import (
     Warrior,
     Ranger,
     Mage,
+    Chest,
     Button,
 )
 
@@ -60,12 +61,21 @@ class GameState:
                     self.all_enemies,
                     self.all_entities,
                 )
+        if random.random() < 0.05:
+            Chest(
+                (random.randint(0, SCREEN_WIDTH), random.randint(0, SCREEN_HEIGHT)),
+                self.all_enemies,
+                self.all_entities,
+            )
 
     def spawn_playable_unit(self, pos):
         if not any(e.rect.collidepoint(pos) for e in self.all_enemies):
             if self.playable_units[self.selected_unit] > 0:
                 self.playable_units[self.selected_unit] -= 1
-                self.selected_unit.create_new(pos, self.all_players, self.all_entities)
+                spawned_unit = self.selected_unit.create_new(
+                    pos, self.all_players, self.all_entities
+                )
+                print(spawned_unit)
 
     def transition_state(self, new_state: States):
         self.screen_state = new_state

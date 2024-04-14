@@ -1,4 +1,5 @@
 import enum
+import random
 import pygame
 from pygame import image, Surface
 from pygame.font import Font
@@ -87,6 +88,9 @@ class Unit(Sprite):
         self.image = self.standing_surf
         self.rect = self.image.get_rect(center=centerpos)
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}(pos={self.rect.center}, {self.health=}, {self.attack=}, {self.speed=}, {self.attack_speed=})"
+
     def __set_surf(self):
         if self.walking:
             if self.image not in [self.walking_1_surf, self.walking_2_surf]:
@@ -155,18 +159,63 @@ class Unit(Sprite):
 
 
 class Warrior(Unit):
+    health = 5
+    attack = 2
+    speed = 5
+    attack_speed_scale = 1
+
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, "knight", 5, 2, 5, 2000, 0, False, *groups)
+        super().__init__(
+            centerpos,
+            "knight",
+            Warrior.health,
+            Warrior.attack,
+            Warrior.speed,
+            (1000 // Warrior.attack_speed_scale) + 1000,
+            0,
+            False,
+            *groups,
+        )
 
 
 class Ranger(Unit):
+    health = 3
+    attack = 3
+    speed = 6
+    attack_speed_scale = 1
+
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, "ranger", 3, 3, 6, 2000, 200, False, *groups)
+        super().__init__(
+            centerpos,
+            "ranger",
+            Ranger.health,
+            Ranger.attack,
+            Ranger.speed,
+            (1000 // Ranger.attack_speed_scale) + 1000,
+            200,
+            False,
+            *groups,
+        )
 
 
 class Mage(Unit):
+    health = 1
+    attack = 5
+    speed = 4
+    attack_speed_scale = 1
+
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, "mage", 1, 5, 4, 3000, 300, True, *groups)
+        super().__init__(
+            centerpos,
+            "mage",
+            Mage.health,
+            Mage.attack,
+            Mage.speed,
+            (1000 // Mage.attack_speed_scale) + 2000,
+            300,
+            True,
+            *groups,
+        )
 
 
 class Skeleton(Unit):
@@ -177,9 +226,6 @@ class Skeleton(Unit):
 
     def __init__(self, centerpos: tuple[int, int], *groups):
         super().__init__(centerpos, "skeleton", Skeleton.health, Skeleton.attack, Skeleton.speed, (1000//Skeleton.attack_speed_scale) + 1000, 0, False, *groups)
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}(pos={self.rect.center}, {self.health=}, {self.attack=}, {self.speed=}, {self.attack_speed=})"
 
     @classmethod
     def reset_stats(cls):
@@ -198,15 +244,38 @@ class Zombie(Unit):
     def __init__(self, centerpos: tuple[int, int], *groups):
         super().__init__(centerpos, "zombie", Zombie.health, Zombie.attack, Zombie.speed, (1000//Zombie.attack_speed_scale) + 1000, 0, False, *groups)
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}(pos={self.rect.center}, {self.health=}, {self.attack=}, {self.speed=}, {self.attack_speed=})"
-
     @classmethod
     def reset_stats(cls):
         cls.health = 2
         cls.attack = 2
         cls.speed = 2
         cls.attack_speed_scale = 1
+
+
+class Chest(Sprite):
+    def __init__(self, centerpos, *groups):
+        super().__init__(*groups)
+        self.health = 10
+        self.image = pygame.Surface((50, 50))
+        self.image.fill((0, 0, 0))
+        self.rect = self.image.get_rect(center=centerpos)
+
+    def update(self, screen_rect, group, delta_time):
+        self.rect.clamp_ip(screen_rect)
+
+    def kill(self):
+        random_class = random.choice([Warrior, Ranger, Mage])
+        random_stat = random.randint(1, 4)
+        if random_stat == 1:
+            random_class.attack += 1
+        elif random_stat == 2:
+            random_class.speed += 1
+        elif random_stat == 3:
+            random_class.attack_speed_scale += 1
+        elif random_stat == 4:
+            random_class.health += 1
+        print(f"CHEST GAVE: {random_class} - {random_stat}")
+        super().kill()
 
 
 class TextArea(Sprite):
