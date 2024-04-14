@@ -32,6 +32,7 @@ class GameState:
 
         self.selected_unit = Class.WARRIOR
         self.playable_units = {Class.WARRIOR: 0, Class.RANGER: 0, Class.MAGE: 0}
+        self.room_transition_timer = None
 
         self.all_enemies = pygame.sprite.Group()
         self.all_players = pygame.sprite.Group()
@@ -196,6 +197,9 @@ class GameState:
             self.mage_text = PlayableUnitsText(
                 self.font, (0, 0, 0), Class.MAGE, self.all_text, topleft=(10, 50)
             )
+            self.room_cleared_text = TextArea(
+                self.font, "Room Cleared!", (0, 0, 0), center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
+            )
 
             self.generate_room()
         elif self.screen_state == GameState.States.GAME_OVER:
@@ -224,15 +228,23 @@ class GameState:
                 # Game over
                 self.transition_state(GameState.States.GAME_OVER)
             if not self.all_enemies:
-                for entity in self.all_players.sprites():
-                    if isinstance(entity, Warrior):
-                        self.playable_units[Class.WARRIOR] += 1
-                    elif isinstance(entity, Ranger):
-                        self.playable_units[Class.RANGER] += 1
-                    elif isinstance(entity, Mage):
-                        self.playable_units[Class.MAGE] += 1
-                    entity.kill()
-                self.generate_room()
+                if self.room_transition_timer is None:
+                    self.room_transition_timer = 0
+                    self.all_text.add(self.room_cleared_text)
+                else:
+                    self.room_transition_timer += delta_time
+                    if self.room_transition_timer >= 1000:
+                        self.room_transition_timer = None
+                        self.room_cleared_text.kill()
+                        for entity in self.all_players.sprites():
+                            if isinstance(entity, Warrior):
+                                self.playable_units[Class.WARRIOR] += 1
+                            elif isinstance(entity, Ranger):
+                                self.playable_units[Class.RANGER] += 1
+                            elif isinstance(entity, Mage):
+                                self.playable_units[Class.MAGE] += 1
+                            entity.kill()
+                        self.generate_room()
 
         self.all_text.update(self)
 

@@ -39,7 +39,9 @@ class Unit(Sprite):
         health: int,
         attack: int,
         speed: int,
+        attack_speed: int,
         attack_distance: int,
+        aoe_attack: bool,
         *groups,
     ):
         super().__init__(*groups)
@@ -48,7 +50,9 @@ class Unit(Sprite):
         self.health = health
         self.attack = attack
         self.speed = speed
+        self.attack_speed = attack_speed
         self.attack_distance = attack_distance
+        self.aoe_attack = aoe_attack
         self.time_since_last_attack = 0
 
         # For animations
@@ -83,9 +87,7 @@ class Unit(Sprite):
         self.image = self.standing_surf
         self.rect = self.image.get_rect(center=centerpos)
 
-    def update(self, screen_rect, group, delta_time):
-        self.time_since_last_attack += delta_time
-        self.animation_timer += delta_time
+    def __set_surf(self):
         if self.walking:
             if self.image not in [self.walking_1_surf, self.walking_2_surf]:
                 self.animation_timer = 0
@@ -101,6 +103,14 @@ class Unit(Sprite):
                 self.image = self.standing_surf
         else:
             self.image = self.standing_surf
+
+    def update(self, screen_rect, group, delta_time):
+        self.time_since_last_attack += delta_time
+        self.animation_timer += delta_time
+        self.__set_surf()
+        self.move_nearest_ip(group)
+        self.rect.clamp_ip(screen_rect)
+        self.do_attack(group)
 
     @staticmethod
     def __collided(me: 'Unit', other: 'Unit') -> bool:
@@ -126,8 +136,8 @@ class Unit(Sprite):
                     return
         self.walking = False
 
-    def do_attack(self, group: Group, many: bool):
-        if self.time_since_last_attack >= 2000:
+    def do_attack(self, group: Group):
+        if self.time_since_last_attack >= self.attack_speed:
             attacked = pygame.sprite.spritecollide(self, group, False, self.__collided)
             if attacked:
                 self.image = self.attacking_surf
@@ -139,62 +149,34 @@ class Unit(Sprite):
                     print(
                         f"{type(self)} health: {self.health} | {type(entity)} health: {entity.health}"
                     )
-                    if not many:
+                    if not self.aoe_attack:
                         break
                 self.time_since_last_attack = 0
 
 
 class Warrior(Unit):
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, "knight", 5, 2, 5, 0, *groups)
-
-    def update(self, screen_rect, all_enemies, delta_time):
-        super().update(screen_rect, all_enemies, delta_time)
-        self.move_nearest_ip(all_enemies)
-        self.rect.clamp_ip(screen_rect)
-        self.do_attack(all_enemies, False)
+        super().__init__(centerpos, "knight", 5, 2, 5, 2000, 0, False, *groups)
 
 
 class Ranger(Unit):
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, "ranger", 3, 3, 6, 200, *groups)
-
-    def update(self, screen_rect, all_enemies, delta_time):
-        super().update(screen_rect, all_enemies, delta_time)
-        self.move_nearest_ip(all_enemies)
-        self.rect.clamp_ip(screen_rect)
-        self.do_attack(all_enemies, False)
+        super().__init__(centerpos, "ranger", 3, 3, 6, 2000, 200, False, *groups)
 
 
 class Mage(Unit):
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, "mage", 1, 5, 4, 300, *groups)
-
-    def update(self, screen_rect, all_enemies, delta_time):
-        super().update(screen_rect, all_enemies, delta_time)
-        self.move_nearest_ip(all_enemies)
-        self.rect.clamp_ip(screen_rect)
-        self.do_attack(all_enemies, True)
+        super().__init__(centerpos, "mage", 1, 5, 4, 3000, 300, True, *groups)
 
 
 class Skeleton(Unit):
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, "skeleton", 3, 1, 3, 0, *groups)
-
-    def update(self, screen_rect, all_players, delta_time):
-        super().update(screen_rect, all_players, delta_time)
-        self.rect.clamp_ip(screen_rect)
-        self.do_attack(all_players, False)
+        super().__init__(centerpos, "skeleton", 3, 1, 3, 2000, 0, False, *groups)
 
 
 class Zombie(Unit):
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, "zombie", 2, 2, 1, 0, *groups)
-
-    def update(self, screen_rect, all_players, delta_time):
-        super().update(screen_rect, all_players, delta_time)
-        self.rect.clamp_ip(screen_rect)
-        self.do_attack(all_players, False)
+        super().__init__(centerpos, "zombie", 2, 2, 2, 2000, 0, False, *groups)
 
 
 class TextArea(Sprite):
