@@ -196,3 +196,22 @@ class TitleScreenPlayableUnitsText(TextArea):
 
     def update(self, game):
         self.set_text(f"{game.playable_units[self.class_type]}")
+
+
+class Button(pygame.sprite.Sprite):
+    # Can't type the handle_click_func because of circular imports.
+    # It should be a function that takes a gamestate, any returned values are ignored.
+    def __init__(self, color: tuple[int, int, int], handle_click_func, *groups, **pos):
+        super().__init__(*groups)
+
+        self.surf = pygame.Surface((50, 25))
+        self.surf.fill(color)
+        self.rect = self.surf.get_rect(**pos)
+        self.click_func = handle_click_func
+
+    def handle_click(self, gamestate):
+        self.click_func(gamestate)
+
+    def draw(self, screen):
+        screen.blit(self.surf, self.rect)
+

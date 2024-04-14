@@ -15,6 +15,7 @@ from sprites import (
     Warrior,
     Ranger,
     Mage,
+    Button,
 )
 
 
@@ -168,6 +169,13 @@ class GameState:
                 center=(SCREEN_WIDTH / 2 + 20, SCREEN_HEIGHT / 2 + 111),
             )
 
+            Button(
+                (0, 127, 0),
+                self.__title_screen_click,
+                self.all_text,
+                center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 150)
+            )
+
         if self.screen_state == GameState.States.GAME_SCREEN:
             PlayableUnitsText(self.font, Class.WARRIOR, self.all_text, topleft=(10, 10))
             PlayableUnitsText(self.font, Class.RANGER, self.all_text, topleft=(10, 30))
@@ -180,11 +188,11 @@ class GameState:
             self.all_players.update(screen.get_rect(), self.all_enemies, delta_time)
             self.all_enemies.update(screen.get_rect(), self.all_players, delta_time)
 
-            if self.all_players.__len__() + sum(self.playable_units.values()) <= 0:
+            if len(self.all_players) + sum(self.playable_units.values()) <= 0:
                 # Game over
-                self.screen_state = GameState.States.GAME_OVER
+                self.transition_state(GameState.States.GAME_OVER)
                 print("Game Over")
-            if self.all_enemies.__len__() <= 0:
+            if not self.all_enemies:
                 for entity in self.all_players.sprites():
                     if isinstance(entity, Warrior):
                         self.playable_units[Class.WARRIOR] += 1
@@ -193,6 +201,7 @@ class GameState:
                     if isinstance(entity, Mage):
                         self.playable_units[Class.MAGE] += 1
                     entity.kill()
+                self.generate_room()
 
         self.all_text.update(self)
 
@@ -202,6 +211,11 @@ class GameState:
 
         for text in self.all_text:
             text.draw(screen)
+
+    @staticmethod
+    def __title_screen_click(self):
+        if sum(self.playable_units.values()) == 5:
+            self.transition_state(GameState.States.GAME_SCREEN)
 
 
 pygame.init()
@@ -232,9 +246,6 @@ while running:
                     for sprite in clicked_sprites:
                         if hasattr(sprite, "handle_click"):
                             sprite.handle_click(game)
-
-                    if sum(game.playable_units.values()) == 5:
-                        game.transition_state(GameState.States.GAME_SCREEN)
         elif event.type == KEYDOWN:
             if event.key == K_1:
                 game.selected_unit = Class.WARRIOR
