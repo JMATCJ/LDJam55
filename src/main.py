@@ -74,6 +74,7 @@ class GameState:
             TextArea(
                 self.font,
                 "GAME TITLE HERE",
+                (0, 0, 0),
                 self.all_text,
                 center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 100),
             )
@@ -81,6 +82,7 @@ class GameState:
             TextArea(
                 self.font,
                 "Choose 5 units to start with below:",
+                (0, 0, 0),
                 self.all_text,
                 center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 70),
             )
@@ -88,6 +90,7 @@ class GameState:
             TextArea(
                 self.font,
                 "# Warriors:",
+                (0, 0, 0),
                 self.all_text,
                 topleft=(SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2),
             )
@@ -101,6 +104,7 @@ class GameState:
 
             TitleScreenPlayableUnitsText(
                 self.font,
+                (0, 0, 0),
                 Class.WARRIOR,
                 self.all_text,
                 topleft=(SCREEN_WIDTH / 2 - 15, SCREEN_HEIGHT / 2),
@@ -116,6 +120,7 @@ class GameState:
             TextArea(
                 self.font,
                 "# Rangers:",
+                (0, 0, 0),
                 self.all_text,
                 topleft=(SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2 + 50),
             )
@@ -129,6 +134,7 @@ class GameState:
 
             TitleScreenPlayableUnitsText(
                 self.font,
+                (0, 0, 0),
                 Class.RANGER,
                 self.all_text,
                 topleft=(SCREEN_WIDTH / 2 - 15, SCREEN_HEIGHT / 2 + 50),
@@ -144,6 +150,7 @@ class GameState:
             TextArea(
                 self.font,
                 "# Mages:",
+                (0, 0, 0),
                 self.all_text,
                 topleft=(SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2 + 100),
             )
@@ -157,6 +164,7 @@ class GameState:
 
             TitleScreenPlayableUnitsText(
                 self.font,
+                (0, 0, 0),
                 Class.MAGE,
                 self.all_text,
                 topleft=(SCREEN_WIDTH / 2 - 15, SCREEN_HEIGHT / 2 + 100),
@@ -177,9 +185,15 @@ class GameState:
             )
 
         if self.screen_state == GameState.States.GAME_SCREEN:
-            PlayableUnitsText(self.font, Class.WARRIOR, self.all_text, topleft=(10, 10))
-            PlayableUnitsText(self.font, Class.RANGER, self.all_text, topleft=(10, 30))
-            PlayableUnitsText(self.font, Class.MAGE, self.all_text, topleft=(10, 50))
+            self.warrior_text = PlayableUnitsText(
+                self.font, (0, 200, 0), Class.WARRIOR, self.all_text, topleft=(10, 10)
+            )
+            self.ranger_text = PlayableUnitsText(
+                self.font, (0, 0, 0), Class.RANGER, self.all_text, topleft=(10, 30)
+            )
+            self.mage_text = PlayableUnitsText(
+                self.font, (0, 0, 0), Class.MAGE, self.all_text, topleft=(10, 50)
+            )
 
             self.generate_room()
 
@@ -249,10 +263,19 @@ while running:
         elif event.type == KEYDOWN:
             if event.key == K_1:
                 game.selected_unit = Class.WARRIOR
+                game.warrior_text.set_color((0, 200, 0))
+                game.ranger_text.set_color((0, 0, 0))
+                game.mage_text.set_color((0, 0, 0))
             if event.key == K_2:
                 game.selected_unit = Class.RANGER
+                game.warrior_text.set_color((0, 0, 0))
+                game.ranger_text.set_color((0, 200, 0))
+                game.mage_text.set_color((0, 0, 0))
             if event.key == K_3:
                 game.selected_unit = Class.MAGE
+                game.warrior_text.set_color((0, 0, 0))
+                game.ranger_text.set_color((0, 0, 0))
+                game.mage_text.set_color((0, 200, 0))
 
     game.update(screen, delta_time)
 

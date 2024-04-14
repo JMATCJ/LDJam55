@@ -31,7 +31,15 @@ class Class(enum.Enum):
 
 
 class Unit(Sprite):
-    def __init__(self, centerpos: tuple[int, int], image_folder_name: str, health: int, attack: int, speed: int, *groups):
+    def __init__(
+        self,
+        centerpos: tuple[int, int],
+        image_folder_name: str,
+        health: int,
+        attack: int,
+        speed: int,
+        *groups,
+    ):
         super().__init__(*groups)
 
         # Stats
@@ -45,10 +53,28 @@ class Unit(Sprite):
         self.animation_timer = 0
 
         # Surfaces
-        self.standing_surf = smoothscale(image.load(ASSETS_DIR / image_folder_name / "standing.png").convert_alpha(), (64, 64))
-        self.attacking_surf = smoothscale(image.load(ASSETS_DIR / image_folder_name / "attacking.png").convert_alpha(), (64, 64))
-        self.walking_1_surf = smoothscale(image.load(ASSETS_DIR / image_folder_name / "walking_1.png").convert_alpha(),(64, 64))
-        self.walking_2_surf = smoothscale(image.load(ASSETS_DIR / image_folder_name / "walking_2.png").convert_alpha(), (64, 64))
+        self.standing_surf = smoothscale(
+            image.load(ASSETS_DIR / image_folder_name / "standing.png").convert_alpha(),
+            (64, 64),
+        )
+        self.attacking_surf = smoothscale(
+            image.load(
+                ASSETS_DIR / image_folder_name / "attacking.png"
+            ).convert_alpha(),
+            (64, 64),
+        )
+        self.walking_1_surf = smoothscale(
+            image.load(
+                ASSETS_DIR / image_folder_name / "walking_1.png"
+            ).convert_alpha(),
+            (64, 64),
+        )
+        self.walking_2_surf = smoothscale(
+            image.load(
+                ASSETS_DIR / image_folder_name / "walking_2.png"
+            ).convert_alpha(),
+            (64, 64),
+        )
 
         # The surface that should be currently drawn
         self.surf = self.standing_surf
@@ -79,7 +105,10 @@ class Unit(Sprite):
     def move_nearest_ip(self, group: Group):
         if group and self.surf != self.attacking_surf:
             cur_pos = Vector2(self.rect.center)
-            nearest = min([e for e in group], key=lambda e: cur_pos.distance_to(Vector2(e.rect.center)))
+            nearest = min(
+                [e for e in group],
+                key=lambda e: cur_pos.distance_to(Vector2(e.rect.center)),
+            )
             nearest_pos = Vector2(nearest.rect.center)
             dist = nearest_pos - cur_pos
             if dist:
@@ -100,7 +129,9 @@ class Unit(Sprite):
                 if attacked.health <= 0:
                     attacked.kill()
                 self.time_since_last_attack = 0
-                print(f"{type(self)} health: {self.health} | {type(attacked)} health: {attacked.health}")
+                print(
+                    f"{type(self)} health: {self.health} | {type(attacked)} health: {attacked.health}"
+                )
 
 
 class Warrior(Unit):
@@ -161,9 +192,17 @@ class TextArea(Sprite):
     # Either specify "topleft" or "center", followed by the tuple position.
     # Examples: TextArea(font, "test value", group, topleft=(10, 10))
     #           TextArea(font, "new value", group, center=(20, 30))
-    def __init__(self, font: Font, value: str, *groups, **pos):
+    def __init__(
+        self,
+        font: Font,
+        value: str,
+        color,
+        *groups,
+        **pos,
+    ):
         super().__init__(*groups)
         self.font = font
+        self.color = color
         self.text: Surface | None = None
         self.set_text(value)
         if "topleft" in pos:
@@ -177,13 +216,24 @@ class TextArea(Sprite):
         screen.blit(self.text, self.rect)
 
     def set_text(self, text: str):
-        self.text = self.font.render(text, True, (0, 0, 0))
+        self.text = self.font.render(text, True, self.color)
+
+    def set_color(self, color):
+        self.color = color
 
 
 class PlayableUnitsText(TextArea):
-    def __init__(self, font: Font, class_type: Class, *groups, **pos):
+
+    def __init__(
+        self,
+        font: Font,
+        color,
+        class_type: Class,
+        *groups,
+        **pos,
+    ):
         super().__init__(
-            font, f"{class_type.name.capitalize()} units: 0", *groups, **pos
+            font, f"{class_type.name.capitalize()} units: 0", color, *groups, **pos
         )
         self.class_type = class_type
 
@@ -191,6 +241,7 @@ class PlayableUnitsText(TextArea):
         self.set_text(
             f"{self.class_type.name.capitalize()} units: {gamestate.playable_units[self.class_type]}"
         )
+        self.set_color(self.color)
 
 
 class TitleScreenArrow(Sprite):
@@ -219,8 +270,9 @@ class TitleScreenArrow(Sprite):
 
 
 class TitleScreenPlayableUnitsText(TextArea):
-    def __init__(self, font: Font, class_type, *groups, **pos):
-        super().__init__(font, "0", *groups, **pos)
+
+    def __init__(self, font: Font, color, class_type, *groups, **pos):
+        super().__init__(font, "0", color, *groups, **pos)
         self.class_type = class_type
 
     def update(self, game):
@@ -243,4 +295,3 @@ class Button(Sprite):
 
     def draw(self, screen):
         screen.blit(self.surf, self.rect)
-
