@@ -170,13 +170,43 @@ class Mage(Unit):
 
 
 class Skeleton(Unit):
+    health = 3
+    attack = 1
+    speed = 3
+    attack_speed_scale = 1
+
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, "skeleton", 3, 1, 3, 2000, 0, False, *groups)
+        super().__init__(centerpos, "skeleton", Skeleton.health, Skeleton.attack, Skeleton.speed, (1000//Skeleton.attack_speed_scale) + 1000, 0, False, *groups)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(pos={self.rect.center}, {self.health=}, {self.attack=}, {self.speed=}, {self.attack_speed=})"
+
+    @classmethod
+    def reset_stats(cls):
+        cls.health = 3
+        cls.attack = 1
+        cls.speed = 3
+        cls.attack_speed_scale = 1
 
 
 class Zombie(Unit):
+    health = 2
+    attack = 2
+    speed = 2
+    attack_speed_scale = 1
+
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, "zombie", 2, 2, 2, 2000, 0, False, *groups)
+        super().__init__(centerpos, "zombie", Zombie.health, Zombie.attack, Zombie.speed, (1000//Zombie.attack_speed_scale) + 1000, 0, False, *groups)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}(pos={self.rect.center}, {self.health=}, {self.attack=}, {self.speed=}, {self.attack_speed=})"
+
+    @classmethod
+    def reset_stats(cls):
+        cls.health = 2
+        cls.attack = 2
+        cls.speed = 2
+        cls.attack_speed_scale = 1
 
 
 class TextArea(Sprite):

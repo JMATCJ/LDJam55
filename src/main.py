@@ -34,6 +34,8 @@ class GameState:
         self.playable_units = {Class.WARRIOR: 0, Class.RANGER: 0, Class.MAGE: 0}
         self.room_transition_timer = None
 
+        self.rooms_cleared = 0
+
         self.all_enemies = pygame.sprite.Group()
         self.all_players = pygame.sprite.Group()
         self.all_text = pygame.sprite.Group()
@@ -41,9 +43,8 @@ class GameState:
 
         self.build_screen()
 
-    # TODO: Can get rid of if only used in build_screen()
     def generate_room(self):
-        for entity in self.all_entities:
+        for entity in self.all_enemies:
             entity.kill()
         for _ in range(random.randint(1, 5)):
             if random.random() < 0.5:
@@ -70,6 +71,8 @@ class GameState:
         self.build_screen()
 
     def build_screen(self):
+        self.all_players.empty()
+        self.all_enemies.empty()
         self.all_entities.empty()
         self.all_text.empty()
         if self.screen_state == GameState.States.TITLE_SCREEN:
@@ -200,6 +203,7 @@ class GameState:
             self.room_cleared_text = TextArea(
                 self.font, "Room Cleared!", (0, 0, 0), center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
             )
+            self.rooms_cleared = 0
 
             self.generate_room()
         elif self.screen_state == GameState.States.GAME_OVER:
@@ -214,7 +218,7 @@ class GameState:
             Button(
                 (50, 25),
                 (127, 0, 0),
-                lambda: self.transition_state(GameState.States.TITLE_SCREEN),
+                self.__game_over_play_click,
                 self.all_text,
                 center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 150)
             )
@@ -227,16 +231,17 @@ class GameState:
             if len(self.all_players) + sum(self.playable_units.values()) <= 0:
                 # Game over
                 self.transition_state(GameState.States.GAME_OVER)
-            if not self.all_enemies:
+            elif not self.all_enemies:
                 if self.room_transition_timer is None:
                     self.room_transition_timer = 0
+                    self.rooms_cleared += 1
                     self.all_text.add(self.room_cleared_text)
                 else:
                     self.room_transition_timer += delta_time
                     if self.room_transition_timer >= 1000:
                         self.room_transition_timer = None
                         self.room_cleared_text.kill()
-                        for entity in self.all_players.sprites():
+                        for entity in self.all_players:
                             if isinstance(entity, Warrior):
                                 self.playable_units[Class.WARRIOR] += 1
                             elif isinstance(entity, Ranger):
@@ -244,6 +249,23 @@ class GameState:
                             elif isinstance(entity, Mage):
                                 self.playable_units[Class.MAGE] += 1
                             entity.kill()
+                        if self.rooms_cleared % 3 == 0:
+                            Skeleton.health += 1
+                            random_stat = random.randint(1, 3)
+                            if random_stat == 1:
+                                Skeleton.attack += 1
+                            elif random_stat == 2:
+                                Skeleton.speed += 1
+                            elif random_stat == 3:
+                                Skeleton.attack_speed_scale += 1
+                            Zombie.health += 1
+                            random_stat = random.randint(1, 3)
+                            if random_stat == 1:
+                                Zombie.attack += 1
+                            elif random_stat == 2:
+                                Zombie.speed += 1
+                            elif random_stat == 3:
+                                Zombie.attack_speed_scale += 1
                         self.generate_room()
 
         self.all_text.update(self)
@@ -255,6 +277,11 @@ class GameState:
     def __title_screen_play_click(self):
         if sum(self.playable_units.values()) == 5:
             self.transition_state(GameState.States.GAME_SCREEN)
+
+    def __game_over_play_click(self):
+        Skeleton.reset_stats()
+        Zombie.reset_stats()
+        self.transition_state(GameState.States.TITLE_SCREEN)
 
 
 pygame.init()
