@@ -12,6 +12,9 @@ from sprites import (
     TextArea,
     PlayableUnitsText,
     Class,
+    Warrior,
+    Ranger,
+    Mage,
 )
 
 
@@ -176,6 +179,21 @@ class GameState:
         if self.screen_state == GameState.States.GAME_SCREEN:
             self.all_players.update(screen.get_rect(), self.all_enemies, delta_time)
             self.all_enemies.update(screen.get_rect(), self.all_players, delta_time)
+
+            if self.all_players.__len__() + sum(self.playable_units.values()) <= 0:
+                # Game over
+                self.screen_state = GameState.States.GAME_OVER
+                print("Game Over")
+            if self.all_enemies.__len__() <= 0:
+                for entity in self.all_players.sprites():
+                    if isinstance(entity, Warrior):
+                        self.playable_units[Class.WARRIOR] += 1
+                    if isinstance(entity, Ranger):
+                        self.playable_units[Class.RANGER] += 1
+                    if isinstance(entity, Mage):
+                        self.playable_units[Class.MAGE] += 1
+                    entity.kill()
+
         self.all_text.update(self)
 
     def draw(self, screen):
