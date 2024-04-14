@@ -59,9 +59,10 @@ class GameState:
                 )
 
     def spawn_playable_unit(self, pos):
-        if self.playable_units[self.selected_unit] > 0:
-            self.playable_units[self.selected_unit] -= 1
-            self.selected_unit.create_new(pos, self.all_players, self.all_entities)
+        if not any(e.rect.collidepoint(pos) for e in self.all_enemies):
+            if self.playable_units[self.selected_unit] > 0:
+                self.playable_units[self.selected_unit] -= 1
+                self.selected_unit.create_new(pos, self.all_players, self.all_entities)
 
     def transition_state(self, new_state: States):
         self.screen_state = new_state
@@ -178,13 +179,14 @@ class GameState:
             )
 
             Button(
+                (50, 25),
                 (0, 127, 0),
-                self.__title_screen_click,
+                self.__title_screen_play_click,
                 self.all_text,
                 center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 150)
             )
 
-        if self.screen_state == GameState.States.GAME_SCREEN:
+        elif self.screen_state == GameState.States.GAME_SCREEN:
             self.warrior_text = PlayableUnitsText(
                 self.font, (0, 200, 0), Class.WARRIOR, self.all_text, topleft=(10, 10)
             )
@@ -196,6 +198,22 @@ class GameState:
             )
 
             self.generate_room()
+        elif self.screen_state == GameState.States.GAME_OVER:
+            TextArea(
+                self.font,
+                "GAME OVER LOSER + L + RATIO",
+                (0, 0, 0),
+                self.all_text,
+                center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 100),
+            )
+
+            Button(
+                (50, 25),
+                (127, 0, 0),
+                lambda: self.transition_state(GameState.States.TITLE_SCREEN),
+                self.all_text,
+                center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 150)
+            )
 
     def update(self, screen, delta_time):
         if self.screen_state == GameState.States.GAME_SCREEN:
@@ -205,14 +223,13 @@ class GameState:
             if len(self.all_players) + sum(self.playable_units.values()) <= 0:
                 # Game over
                 self.transition_state(GameState.States.GAME_OVER)
-                print("Game Over")
             if not self.all_enemies:
                 for entity in self.all_players.sprites():
                     if isinstance(entity, Warrior):
                         self.playable_units[Class.WARRIOR] += 1
-                    if isinstance(entity, Ranger):
+                    elif isinstance(entity, Ranger):
                         self.playable_units[Class.RANGER] += 1
-                    if isinstance(entity, Mage):
+                    elif isinstance(entity, Mage):
                         self.playable_units[Class.MAGE] += 1
                     entity.kill()
                 self.generate_room()
@@ -220,14 +237,10 @@ class GameState:
         self.all_text.update(self)
 
     def draw(self, screen):
-        for entity in self.all_entities:
-            entity.draw(screen)
+        self.all_entities.draw(screen)
+        self.all_text.draw(screen)
 
-        for text in self.all_text:
-            text.draw(screen)
-
-    @staticmethod
-    def __title_screen_click(self):
+    def __title_screen_play_click(self):
         if sum(self.playable_units.values()) == 5:
             self.transition_state(GameState.States.GAME_SCREEN)
 
@@ -246,36 +259,33 @@ while running:
         if event.type == QUIT:
             running = False
         elif event.type == MOUSEBUTTONDOWN:
-            if game.screen_state == GameState.States.GAME_SCREEN:
-                if event.button == MOUSE_LEFT_CLICK:
-                    game.spawn_playable_unit(event.pos)
-                elif event.button == MOUSE_RIGHT_CLICK:
-                    game.generate_room()
+            if game.screen_state == GameState.States.GAME_SCREEN and event.button == MOUSE_LEFT_CLICK:
+                game.spawn_playable_unit(event.pos)
         elif event.type == MOUSEBUTTONUP:
-            if game.screen_state == GameState.States.TITLE_SCREEN:
-                if event.button == MOUSE_LEFT_CLICK:
-                    clicked_sprites = [
-                        s for s in game.all_text if s.rect.collidepoint(event.pos)
-                    ]
-                    for sprite in clicked_sprites:
-                        if hasattr(sprite, "handle_click"):
-                            sprite.handle_click(game)
+            if event.button == MOUSE_LEFT_CLICK:
+                clicked_sprites = [
+                    s for s in game.all_text if s.rect.collidepoint(event.pos)
+                ]
+                for sprite in clicked_sprites:
+                    if hasattr(sprite, "handle_click"):
+                        sprite.handle_click(game)
         elif event.type == KEYDOWN:
-            if event.key == K_1:
-                game.selected_unit = Class.WARRIOR
-                game.warrior_text.set_color((0, 200, 0))
-                game.ranger_text.set_color((0, 0, 0))
-                game.mage_text.set_color((0, 0, 0))
-            if event.key == K_2:
-                game.selected_unit = Class.RANGER
-                game.warrior_text.set_color((0, 0, 0))
-                game.ranger_text.set_color((0, 200, 0))
-                game.mage_text.set_color((0, 0, 0))
-            if event.key == K_3:
-                game.selected_unit = Class.MAGE
-                game.warrior_text.set_color((0, 0, 0))
-                game.ranger_text.set_color((0, 0, 0))
-                game.mage_text.set_color((0, 200, 0))
+            if game.screen_state == GameState.States.GAME_SCREEN:
+                if event.key == K_1:
+                    game.selected_unit = Class.WARRIOR
+                    game.warrior_text.set_color((0, 200, 0))
+                    game.ranger_text.set_color((0, 0, 0))
+                    game.mage_text.set_color((0, 0, 0))
+                elif event.key == K_2:
+                    game.selected_unit = Class.RANGER
+                    game.warrior_text.set_color((0, 0, 0))
+                    game.ranger_text.set_color((0, 200, 0))
+                    game.mage_text.set_color((0, 0, 0))
+                elif event.key == K_3:
+                    game.selected_unit = Class.MAGE
+                    game.warrior_text.set_color((0, 0, 0))
+                    game.ranger_text.set_color((0, 0, 0))
+                    game.mage_text.set_color((0, 200, 0))
 
     game.update(screen, delta_time)
 

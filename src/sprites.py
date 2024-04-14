@@ -5,6 +5,7 @@ from pygame.font import Font
 from pygame.math import Vector2
 from pygame.sprite import Group, Sprite
 from pygame.transform import smoothscale
+from typing import Any, Callable
 
 from consts import *
 
@@ -77,33 +78,30 @@ class Unit(Sprite):
         )
 
         # The surface that should be currently drawn
-        self.surf = self.standing_surf
-        self.rect = self.surf.get_rect(center=centerpos)
+        self.image = self.standing_surf
+        self.rect = self.image.get_rect(center=centerpos)
 
     def update(self, screen_rect, group, delta_time):
         self.time_since_last_attack += delta_time
         self.animation_timer += delta_time
         if self.walking:
-            if self.surf not in [self.walking_1_surf, self.walking_2_surf]:
+            if self.image not in [self.walking_1_surf, self.walking_2_surf]:
                 self.animation_timer = 0
-                self.surf = self.walking_1_surf
+                self.image = self.walking_1_surf
             elif self.animation_timer >= 400:
-                if self.surf == self.walking_1_surf:
-                    self.surf = self.walking_2_surf
+                if self.image == self.walking_1_surf:
+                    self.image = self.walking_2_surf
                 else:
-                    self.surf = self.walking_1_surf
+                    self.image = self.walking_1_surf
                 self.animation_timer = 0
-        elif self.surf == self.attacking_surf:
+        elif self.image == self.attacking_surf:
             if self.animation_timer >= 150:
-                self.surf = self.standing_surf
+                self.image = self.standing_surf
         else:
-            self.surf = self.standing_surf
-
-    def draw(self, screen):
-        screen.blit(self.surf, self.rect)
+            self.image = self.standing_surf
 
     def move_nearest_ip(self, group: Group):
-        if group and self.surf != self.attacking_surf:
+        if group and self.image != self.attacking_surf:
             cur_pos = Vector2(self.rect.center)
             nearest = min(
                 [e for e in group],
@@ -124,7 +122,7 @@ class Unit(Sprite):
             attacked: Unit = pygame.sprite.spritecollideany(self, group)
             if attacked:
                 attacked.health -= self.attack
-                self.surf = self.attacking_surf
+                self.image = self.attacking_surf
                 self.animation_timer = 0
                 if attacked.health <= 0:
                     attacked.kill()
@@ -189,7 +187,7 @@ class Zombie(Unit):
 
 class TextArea(Sprite):
     # Besides font and value, takes a third parameter for its position, which must be keyworded.
-    # Either specify "topleft" or "center", followed by the tuple position.
+    # This can use all the same arguments as get_rect() for positioning Rects (topleft, center, etc)
     # Examples: TextArea(font, "test value", group, topleft=(10, 10))
     #           TextArea(font, "new value", group, center=(20, 30))
     def __init__(
@@ -203,20 +201,12 @@ class TextArea(Sprite):
         super().__init__(*groups)
         self.font = font
         self.color = color
-        self.text: Surface | None = None
+        self.image: Surface | None = None
         self.set_text(value)
-        if "topleft" in pos:
-            self.rect = self.text.get_rect(topleft=pos["topleft"])
-        elif "center" in pos:
-            self.rect = self.text.get_rect(center=pos["center"])
-        else:
-            self.rect = self.text.get_rect()
-
-    def draw(self, screen):
-        screen.blit(self.text, self.rect)
+        self.rect = self.image.get_rect(**pos)
 
     def set_text(self, text: str):
-        self.text = self.font.render(text, True, self.color)
+        self.image = self.font.render(text, True, self.color)
 
     def set_color(self, color):
         self.color = color
@@ -249,14 +239,9 @@ class TitleScreenArrow(Sprite):
         super().__init__(*groups)
         self.arrow_type = arrow_type
         self.class_type = class_type
-        self.surf = Surface((15, 15))
-        self.surf.fill((0, 0, 0))
-        if "topleft" in pos:
-            self.rect = self.surf.get_rect(topleft=pos["topleft"])
-        elif "center" in pos:
-            self.rect = self.surf.get_rect(center=pos["center"])
-        else:
-            self.rect = self.surf.get_rect()
+        self.image = Surface((15, 15))
+        self.image.fill((0, 0, 0))
+        self.rect = self.image.get_rect(**pos)
 
     def handle_click(self, game):
         if sum(game.playable_units.values()) + self.arrow_type > 5:
@@ -264,9 +249,6 @@ class TitleScreenArrow(Sprite):
         game.playable_units[self.class_type] += self.arrow_type
         if game.playable_units[self.class_type] < 0:
             game.playable_units[self.class_type] = 0
-
-    def draw(self, screen):
-        screen.blit(self.surf, self.rect)
 
 
 class TitleScreenPlayableUnitsText(TextArea):
@@ -280,18 +262,13 @@ class TitleScreenPlayableUnitsText(TextArea):
 
 
 class Button(Sprite):
-    # Can't type the handle_click_func because of circular imports.
-    # It should be a function that takes a gamestate, any returned values are ignored.
-    def __init__(self, color: tuple[int, int, int], handle_click_func, *groups, **pos):
+    def __init__(self, button_size: tuple[int, int], color: tuple[int, int, int], handle_click_func: Callable[[], Any], *groups, **pos):
         super().__init__(*groups)
 
-        self.surf = Surface((50, 25))
-        self.surf.fill(color)
-        self.rect = self.surf.get_rect(**pos)
+        self.image = Surface(button_size)
+        self.image.fill(color)
+        self.rect = self.image.get_rect(**pos)
         self.click_func = handle_click_func
 
-    def handle_click(self, gamestate):
-        self.click_func(gamestate)
-
-    def draw(self, screen):
-        screen.blit(self.surf, self.rect)
+    def handle_click(self, _):
+        self.click_func()
