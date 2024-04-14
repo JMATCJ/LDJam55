@@ -39,6 +39,7 @@ class Unit(Sprite):
         health: int,
         attack: int,
         speed: int,
+        attack_distance: int,
         *groups,
     ):
         super().__init__(*groups)
@@ -47,6 +48,7 @@ class Unit(Sprite):
         self.health = health
         self.attack = attack
         self.speed = speed
+        self.attack_distance = attack_distance
         self.time_since_last_attack = 0
 
         # For animations
@@ -100,6 +102,13 @@ class Unit(Sprite):
         else:
             self.image = self.standing_surf
 
+    @staticmethod
+    def __collided(me: 'Unit', other: 'Unit') -> bool:
+        is_colliding = me.rect.colliderect(other.rect)
+        me_pos = Vector2(me.rect.center)
+        other_pos = Vector2(other.rect.center)
+        return is_colliding or me_pos.distance_to(other_pos) < me.attack_distance
+
     def move_nearest_ip(self, group: Group):
         if group and self.image != self.attacking_surf:
             cur_pos = Vector2(self.rect.center)
@@ -111,78 +120,81 @@ class Unit(Sprite):
             dist = nearest_pos - cur_pos
             if dist:
                 vec = dist.normalize() * self.speed
-                if not pygame.sprite.spritecollideany(self, group):
+                if not pygame.sprite.spritecollideany(self, group, self.__collided):
                     self.rect.move_ip(vec)
                     self.walking = True
                     return
         self.walking = False
 
-    def attack_one(self, group: Group):
+    def do_attack(self, group: Group, many: bool):
         if self.time_since_last_attack >= 2000:
-            attacked: Unit = pygame.sprite.spritecollideany(self, group)
+            attacked = pygame.sprite.spritecollide(self, group, False, self.__collided)
             if attacked:
-                attacked.health -= self.attack
                 self.image = self.attacking_surf
                 self.animation_timer = 0
-                if attacked.health <= 0:
-                    attacked.kill()
+                for entity in attacked:
+                    entity.health -= self.attack
+                    if entity.health <= 0:
+                        entity.kill()
+                    print(
+                        f"{type(self)} health: {self.health} | {type(entity)} health: {entity.health}"
+                    )
+                    if not many:
+                        break
                 self.time_since_last_attack = 0
-                print(
-                    f"{type(self)} health: {self.health} | {type(attacked)} health: {attacked.health}"
-                )
 
 
 class Warrior(Unit):
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, "knight", 5, 2, 5, *groups)
+        super().__init__(centerpos, "knight", 5, 2, 5, 0, *groups)
 
     def update(self, screen_rect, all_enemies, delta_time):
         super().update(screen_rect, all_enemies, delta_time)
         self.move_nearest_ip(all_enemies)
         self.rect.clamp_ip(screen_rect)
-        self.attack_one(all_enemies)
+        self.do_attack(all_enemies, False)
 
 
 class Ranger(Unit):
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, "ranger", 3, 3, 6, *groups)
+        super().__init__(centerpos, "ranger", 3, 3, 6, 200, *groups)
 
     def update(self, screen_rect, all_enemies, delta_time):
         super().update(screen_rect, all_enemies, delta_time)
         self.move_nearest_ip(all_enemies)
         self.rect.clamp_ip(screen_rect)
-        self.attack_one(all_enemies)
+        self.do_attack(all_enemies, False)
 
 
 class Mage(Unit):
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, "mage", 1, 5, 4, *groups)
+        super().__init__(centerpos, "mage", 1, 5, 4, 300, *groups)
 
     def update(self, screen_rect, all_enemies, delta_time):
         super().update(screen_rect, all_enemies, delta_time)
         self.move_nearest_ip(all_enemies)
         self.rect.clamp_ip(screen_rect)
-        self.attack_one(all_enemies)
+        self.do_attack(all_enemies, True)
 
 
 class Skeleton(Unit):
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, "skeleton", 3, 1, 3, *groups)
+        super().__init__(centerpos, "skeleton", 3, 1, 3, 0, *groups)
 
     def update(self, screen_rect, all_players, delta_time):
         super().update(screen_rect, all_players, delta_time)
         self.rect.clamp_ip(screen_rect)
-        self.attack_one(all_players)
+        self.do_attack(all_players, False)
 
 
 class Zombie(Unit):
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, "zombie", 2, 2, 1, *groups)
+        super().__init__(centerpos, "zombie", 2, 2, 1, 0, *groups)
 
     def update(self, screen_rect, all_players, delta_time):
         super().update(screen_rect, all_players, delta_time)
         self.rect.clamp_ip(screen_rect)
-        self.attack_one(all_players)
+        self.do_attack(all_players, False)
 
 
 class TextArea(Sprite):
