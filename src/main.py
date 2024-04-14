@@ -9,6 +9,7 @@ from sprites import (
     Zombie,
     TitleScreenArrow,
     TitleScreenPlayableUnitsText,
+    GameScreenRoomsClearedText,
     TextArea,
     PlayableUnitsText,
     Class,
@@ -204,6 +205,12 @@ class GameState:
                 self.font, "Room Cleared!", (0, 0, 0), center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
             )
             self.rooms_cleared = 0
+            GameScreenRoomsClearedText(
+                self.font,
+                (0, 0, 0),
+                self.all_text,
+                topright=(SCREEN_WIDTH - 10, 10),
+            )
 
             self.generate_room()
         elif self.screen_state == GameState.States.GAME_OVER:

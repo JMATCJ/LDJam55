@@ -237,7 +237,6 @@ class TextArea(Sprite):
 
 
 class PlayableUnitsText(TextArea):
-
     def __init__(
         self,
         font: Font,
@@ -276,13 +275,20 @@ class TitleScreenArrow(Sprite):
 
 
 class TitleScreenPlayableUnitsText(TextArea):
-
     def __init__(self, font: Font, color, class_type, *groups, **pos):
         super().__init__(font, "0", color, *groups, **pos)
         self.class_type = class_type
 
     def update(self, game):
         self.set_text(f"{game.playable_units[self.class_type]}")
+
+
+class GameScreenRoomsClearedText(TextArea):
+    def __init__(self, font: Font, color, *groups, **pos):
+        super().__init__(font, f"Rooms cleared: XX", color, *groups, **pos)
+
+    def update(self, game):
+        self.set_text(f"Rooms cleared: {game.rooms_cleared}")
 
 
 class Button(Sprite):
