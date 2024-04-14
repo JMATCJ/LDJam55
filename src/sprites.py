@@ -5,7 +5,7 @@ from pygame import image, Surface
 from pygame.font import Font
 from pygame.math import Vector2
 from pygame.sprite import Group, Sprite
-from pygame.transform import smoothscale
+from pygame.transform import smoothscale, flip
 from typing import Any, Callable
 
 from consts import *
@@ -30,6 +30,18 @@ class Class(enum.Enum):
                 return Skeleton(centerpos, *groups)
             case self.ZOMBIE:
                 return Zombie(centerpos, *groups)
+
+    @classmethod
+    def random(cls):
+        return random.choice([cls.WARRIOR, cls.RANGER, cls.MAGE, cls.SKELETON, cls.ZOMBIE])
+
+    @classmethod
+    def random_playable_unit(cls):
+        return random.choice([cls.WARRIOR, cls.RANGER, cls.MAGE])
+
+    @classmethod
+    def random_enemy(cls):
+        return random.choice([cls.SKELETON, cls.ZOMBIE])
 
 
 class Unit(Sprite):
@@ -256,8 +268,7 @@ class Chest(Sprite):
     def __init__(self, centerpos, *groups):
         super().__init__(*groups)
         self.health = 10
-        self.image = pygame.Surface((50, 50))
-        self.image.fill((0, 0, 0))
+        self.image = smoothscale(image.load(ASSETS_DIR / "chest.png").convert_alpha(), (64, 44))
         self.rect = self.image.get_rect(center=centerpos)
 
     def update(self, screen_rect, group, delta_time):
@@ -331,8 +342,9 @@ class TitleScreenArrow(Sprite):
         super().__init__(*groups)
         self.arrow_type = arrow_type
         self.class_type = class_type
-        self.image = Surface((15, 15))
-        self.image.fill((0, 0, 0))
+        self.image = smoothscale(image.load(ASSETS_DIR / "title_screen" / "arrow.png").convert_alpha(), (51, 20))
+        if arrow_type == -1:
+            self.image = flip(self.image, True, False)
         self.rect = self.image.get_rect(**pos)
 
     def handle_click(self, game):

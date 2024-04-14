@@ -43,33 +43,27 @@ class GameState:
         self.all_text = pygame.sprite.Group()
         self.all_entities = pygame.sprite.Group()
 
+        self.room_bg = pygame.image.load(ASSETS_DIR / "background.png").convert()
+        self.game_over_bg = pygame.image.load(ASSETS_DIR / "game_over.png").convert()
+
+        self.bg_surf = self.room_bg
+
         self.build_screen()
 
     def generate_room(self):
         for entity in self.all_enemies:
             entity.kill()
         for _ in range(random.randint(1, 5)):
-            if random.random() < 0.5:
-                Skeleton(
-                    (random.randint(0, SCREEN_WIDTH), random.randint(0, SCREEN_HEIGHT)),
-                    self.all_enemies,
-                    self.all_entities,
-                )
-            else:
-                Zombie(
-                    (random.randint(0, SCREEN_WIDTH), random.randint(0, SCREEN_HEIGHT)),
-                    self.all_enemies,
-                    self.all_entities,
-                )
+            Class.random_enemy().create_new((random.randint(0, SCREEN_WIDTH), random.randint(75, SCREEN_HEIGHT)), self.all_enemies, self.all_entities)
         if random.random() < 0.05:
             Chest(
-                (random.randint(0, SCREEN_WIDTH), random.randint(0, SCREEN_HEIGHT)),
+                (random.randint(0, SCREEN_WIDTH), random.randint(75, SCREEN_HEIGHT)),
                 self.all_enemies,
                 self.all_entities,
             )
 
     def spawn_playable_unit(self, pos):
-        if not any(e.rect.collidepoint(pos) for e in self.all_enemies):
+        if pos[1] >= 75 and not any(e.rect.collidepoint(pos) for e in self.all_enemies):
             if self.playable_units[self.selected_unit] > 0:
                 self.playable_units[self.selected_unit] -= 1
                 spawned_unit = self.selected_unit.create_new(
@@ -87,6 +81,7 @@ class GameState:
         self.all_entities.empty()
         self.all_text.empty()
         if self.screen_state == GameState.States.TITLE_SCREEN:
+            self.bg_surf = self.room_bg
             TextArea(
                 self.font,
                 "GAME TITLE HERE",
@@ -103,95 +98,33 @@ class GameState:
                 center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 70),
             )
 
-            TextArea(
-                self.font,
-                "# Warriors:",
-                (0, 0, 0),
-                self.all_text,
-                topleft=(SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2),
-            )
-
-            TitleScreenArrow(
-                -1,
-                Class.WARRIOR,
-                self.all_text,
-                center=(SCREEN_WIDTH / 2 - 40, SCREEN_HEIGHT / 2 + 11),
-            )
-
-            TitleScreenPlayableUnitsText(
-                self.font,
-                (0, 0, 0),
-                Class.WARRIOR,
-                self.all_text,
-                topleft=(SCREEN_WIDTH / 2 - 15, SCREEN_HEIGHT / 2),
-            )
-
-            TitleScreenArrow(
-                1,
-                Class.WARRIOR,
-                self.all_text,
-                center=(SCREEN_WIDTH / 2 + 20, SCREEN_HEIGHT / 2 + 11),
-            )
-
-            TextArea(
-                self.font,
-                "# Rangers:",
-                (0, 0, 0),
-                self.all_text,
-                topleft=(SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2 + 50),
-            )
-
-            TitleScreenArrow(
-                -1,
-                Class.RANGER,
-                self.all_text,
-                center=(SCREEN_WIDTH / 2 - 40, SCREEN_HEIGHT / 2 + 61),
-            )
-
-            TitleScreenPlayableUnitsText(
-                self.font,
-                (0, 0, 0),
-                Class.RANGER,
-                self.all_text,
-                topleft=(SCREEN_WIDTH / 2 - 15, SCREEN_HEIGHT / 2 + 50),
-            )
-
-            TitleScreenArrow(
-                1,
-                Class.RANGER,
-                self.all_text,
-                center=(SCREEN_WIDTH / 2 + 20, SCREEN_HEIGHT / 2 + 61),
-            )
-
-            TextArea(
-                self.font,
-                "# Mages:",
-                (0, 0, 0),
-                self.all_text,
-                topleft=(SCREEN_WIDTH / 2 - 200, SCREEN_HEIGHT / 2 + 100),
-            )
-
-            TitleScreenArrow(
-                -1,
-                Class.MAGE,
-                self.all_text,
-                center=(SCREEN_WIDTH / 2 - 40, SCREEN_HEIGHT / 2 + 111),
-            )
-
-            TitleScreenPlayableUnitsText(
-                self.font,
-                (0, 0, 0),
-                Class.MAGE,
-                self.all_text,
-                topleft=(SCREEN_WIDTH / 2 - 15, SCREEN_HEIGHT / 2 + 100),
-            )
-
-            TitleScreenArrow(
-                1,
-                Class.MAGE,
-                self.all_text,
-                center=(SCREEN_WIDTH / 2 + 20, SCREEN_HEIGHT / 2 + 111),
-            )
+            for i, class_type in enumerate([Class.WARRIOR, Class.RANGER, Class.MAGE]):
+                class_text = TextArea(
+                    self.font,
+                    f"# {class_type.name.capitalize()}s:",
+                    (0, 0, 0),
+                    self.all_text,
+                    topright=(SCREEN_WIDTH / 2 - 50, SCREEN_HEIGHT / 2 + (50 * i)),
+                )
+                class_left_arrow = TitleScreenArrow(
+                    -1,
+                    class_type,
+                    self.all_text,
+                    topleft=class_text.rect.move(10, 0).topright,
+                )
+                class_count_text = TitleScreenPlayableUnitsText(
+                    self.font,
+                    (0, 0, 0),
+                    class_type,
+                    self.all_text,
+                    topleft=class_left_arrow.rect.move(10, 0).topright,
+                )
+                TitleScreenArrow(
+                    1,
+                    class_type,
+                    self.all_text,
+                    topleft=class_count_text.rect.move(10, 0).topright,
+                )
 
             Button(
                 (50, 25),
@@ -202,6 +135,7 @@ class GameState:
             )
 
         elif self.screen_state == GameState.States.GAME_SCREEN:
+            self.bg_surf = self.room_bg
             self.warrior_text = PlayableUnitsText(
                 self.font, (0, 200, 0), Class.WARRIOR, self.all_text, topleft=(10, 10)
             )
@@ -211,19 +145,20 @@ class GameState:
             self.mage_text = PlayableUnitsText(
                 self.font, (0, 0, 0), Class.MAGE, self.all_text, topleft=(10, 50)
             )
-            self.room_cleared_text = TextArea(
-                self.font, "Room Cleared!", (0, 0, 0), center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
-            )
             self.rooms_cleared = 0
-            GameScreenRoomsClearedText(
+            rooms_cleared = GameScreenRoomsClearedText(
                 self.font,
                 (0, 0, 0),
                 self.all_text,
                 topright=(SCREEN_WIDTH - 10, 10),
             )
+            self.room_cleared_text = TextArea(
+                self.font, "Room Cleared!", (0, 0, 0), topleft=rooms_cleared.rect.move(0, 25).topleft
+            )
 
             self.generate_room()
         elif self.screen_state == GameState.States.GAME_OVER:
+            self.bg_surf = self.game_over_bg
             TextArea(
                 self.font,
                 "GAME OVER LOSER + L + RATIO",
@@ -283,11 +218,14 @@ class GameState:
                                 Zombie.speed += 1
                             elif random_stat == 3:
                                 Zombie.attack_speed_scale += 1
+                        if self.rooms_cleared % 5 == 0:
+                            self.playable_units[Class.random_playable_unit()] += 1
                         self.generate_room()
 
         self.all_text.update(self)
 
     def draw(self, screen):
+        screen.blit(self.bg_surf, self.bg_surf.get_rect())
         self.all_entities.draw(screen)
         self.all_text.draw(screen)
 
@@ -298,6 +236,7 @@ class GameState:
     def __game_over_play_click(self):
         Skeleton.reset_stats()
         Zombie.reset_stats()
+        self.selected_unit = Class.WARRIOR
         self.transition_state(GameState.States.TITLE_SCREEN)
 
 
@@ -344,8 +283,6 @@ while running:
                     game.mage_text.set_color((0, 200, 0))
 
     game.update(screen, delta_time)
-
-    screen.fill((200, 200, 200))
     game.draw(screen)
 
     pygame.display.update()
