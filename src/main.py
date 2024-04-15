@@ -12,7 +12,6 @@ from sprites import (
     GameScreenRoomsClearedText,
     TextArea,
     PlayableUnitsText,
-    Class,
     Warrior,
     Ranger,
     Mage,
@@ -32,8 +31,8 @@ class GameState:
         self.screen_state = state
         self.font = pygame.font.Font(pygame.font.get_default_font(), 24)
 
-        self.selected_unit = Class.WARRIOR
-        self.playable_units = {Class.WARRIOR: 0, Class.RANGER: 0, Class.MAGE: 0}
+        self.selected_unit = Warrior
+        self.playable_units = {Warrior: 0, Ranger: 0, Mage: 0}
         self.room_transition_timer = None
 
         self.rooms_cleared = 0
@@ -54,7 +53,7 @@ class GameState:
         for entity in self.all_enemies:
             entity.kill()
         for _ in range(random.randint(1, 5)):
-            Class.random_enemy().create_new((random.randint(0, SCREEN_WIDTH), random.randint(75, SCREEN_HEIGHT)), self.all_enemies, self.all_entities)
+            random.choice([Skeleton, Zombie])((random.randint(0, SCREEN_WIDTH), random.randint(75, SCREEN_HEIGHT)), self.all_enemies, self.all_entities)
         if random.random() < 0.05:
             Chest(
                 (random.randint(0, SCREEN_WIDTH), random.randint(75, SCREEN_HEIGHT)),
@@ -66,7 +65,7 @@ class GameState:
         if pos[1] >= 75 and not any(e.rect.collidepoint(pos) for e in self.all_enemies):
             if self.playable_units[self.selected_unit] > 0:
                 self.playable_units[self.selected_unit] -= 1
-                spawned_unit = self.selected_unit.create_new(
+                spawned_unit = self.selected_unit(
                     pos, self.all_players, self.all_entities
                 )
                 print(spawned_unit)
@@ -98,10 +97,10 @@ class GameState:
                 center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 70),
             )
 
-            for i, class_type in enumerate([Class.WARRIOR, Class.RANGER, Class.MAGE]):
+            for i, class_type in enumerate([Warrior, Ranger, Mage]):
                 class_text = TextArea(
                     self.font,
-                    f"# {class_type.name.capitalize()}s:",
+                    f"# {class_type.__name__}s:",
                     (0, 0, 0),
                     self.all_text,
                     topright=(SCREEN_WIDTH / 2 - 50, SCREEN_HEIGHT / 2 + (50 * i)),
@@ -137,13 +136,13 @@ class GameState:
         elif self.screen_state == GameState.States.GAME_SCREEN:
             self.bg_surf = self.room_bg
             self.warrior_text = PlayableUnitsText(
-                self.font, (0, 200, 0), Class.WARRIOR, self.all_text, topleft=(10, 10)
+                self.font, (0, 200, 0), Warrior, self.all_text, topleft=(10, 10)
             )
             self.ranger_text = PlayableUnitsText(
-                self.font, (0, 0, 0), Class.RANGER, self.all_text, topleft=(10, 30)
+                self.font, (0, 0, 0), Ranger, self.all_text, topleft=(10, 30)
             )
             self.mage_text = PlayableUnitsText(
-                self.font, (0, 0, 0), Class.MAGE, self.all_text, topleft=(10, 50)
+                self.font, (0, 0, 0), Mage, self.all_text, topleft=(10, 50)
             )
             self.rooms_cleared = 0
             rooms_cleared = GameScreenRoomsClearedText(
@@ -194,12 +193,7 @@ class GameState:
                         self.room_transition_timer = None
                         self.room_cleared_text.kill()
                         for entity in self.all_players:
-                            if isinstance(entity, Warrior):
-                                self.playable_units[Class.WARRIOR] += 1
-                            elif isinstance(entity, Ranger):
-                                self.playable_units[Class.RANGER] += 1
-                            elif isinstance(entity, Mage):
-                                self.playable_units[Class.MAGE] += 1
+                            self.playable_units[type(entity)] += 1
                             entity.kill()
                         if self.rooms_cleared % 3 == 0:
                             Skeleton.health += 1
@@ -219,7 +213,7 @@ class GameState:
                             elif random_stat == 3:
                                 Zombie.attack_speed_scale += 1
                         if self.rooms_cleared % 5 == 0:
-                            self.playable_units[Class.random_playable_unit()] += 1
+                            self.playable_units[random.choice([Warrior, Ranger, Mage])] += 1
                         self.generate_room()
 
         self.all_text.update(self)
@@ -236,7 +230,7 @@ class GameState:
     def __game_over_play_click(self):
         Skeleton.reset_stats()
         Zombie.reset_stats()
-        self.selected_unit = Class.WARRIOR
+        self.selected_unit = Warrior
         self.transition_state(GameState.States.TITLE_SCREEN)
 
 
@@ -267,17 +261,17 @@ while running:
         elif event.type == KEYDOWN:
             if game.screen_state == GameState.States.GAME_SCREEN:
                 if event.key == K_1:
-                    game.selected_unit = Class.WARRIOR
+                    game.selected_unit = Warrior
                     game.warrior_text.set_color((0, 200, 0))
                     game.ranger_text.set_color((0, 0, 0))
                     game.mage_text.set_color((0, 0, 0))
                 elif event.key == K_2:
-                    game.selected_unit = Class.RANGER
+                    game.selected_unit = Ranger
                     game.warrior_text.set_color((0, 0, 0))
                     game.ranger_text.set_color((0, 200, 0))
                     game.mage_text.set_color((0, 0, 0))
                 elif event.key == K_3:
-                    game.selected_unit = Class.MAGE
+                    game.selected_unit = Mage
                     game.warrior_text.set_color((0, 0, 0))
                     game.ranger_text.set_color((0, 0, 0))
                     game.mage_text.set_color((0, 200, 0))

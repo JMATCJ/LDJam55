@@ -1,4 +1,3 @@
-import enum
 import random
 import pygame
 from pygame import image, Surface
@@ -9,39 +8,6 @@ from pygame.transform import smoothscale, flip
 from typing import Any, Callable
 
 from consts import *
-
-
-class Class(enum.Enum):
-    WARRIOR = enum.auto()
-    RANGER = enum.auto()
-    MAGE = enum.auto()
-    SKELETON = enum.auto()
-    ZOMBIE = enum.auto()
-
-    def create_new(self, centerpos: tuple[int, int], *groups):
-        match self:
-            case self.WARRIOR:
-                return Warrior(centerpos, *groups)
-            case self.RANGER:
-                return Ranger(centerpos, *groups)
-            case self.MAGE:
-                return Mage(centerpos, *groups)
-            case self.SKELETON:
-                return Skeleton(centerpos, *groups)
-            case self.ZOMBIE:
-                return Zombie(centerpos, *groups)
-
-    @classmethod
-    def random(cls):
-        return random.choice([cls.WARRIOR, cls.RANGER, cls.MAGE, cls.SKELETON, cls.ZOMBIE])
-
-    @classmethod
-    def random_playable_unit(cls):
-        return random.choice([cls.WARRIOR, cls.RANGER, cls.MAGE])
-
-    @classmethod
-    def random_enemy(cls):
-        return random.choice([cls.SKELETON, cls.ZOMBIE])
 
 
 class Unit(Sprite):
@@ -321,18 +287,18 @@ class PlayableUnitsText(TextArea):
         self,
         font: Font,
         color,
-        class_type: Class,
+        class_type,
         *groups,
         **pos,
     ):
         super().__init__(
-            font, f"{class_type.name.capitalize()} units: 0", color, *groups, **pos
+            font, f"{class_type.__name__} units: 0", color, *groups, **pos
         )
         self.class_type = class_type
 
     def update(self, gamestate):
         self.set_text(
-            f"{self.class_type.name.capitalize()} units: {gamestate.playable_units[self.class_type]}"
+            f"{self.class_type.__name__} units: {gamestate.playable_units[self.class_type]}"
         )
         self.set_color(self.color)
 
