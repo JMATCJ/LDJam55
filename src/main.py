@@ -68,7 +68,7 @@ class GameState:
             entity.kill()
         for _ in range(random.randint(1, 5)):
             random.choice([Skeleton, Zombie])((random.randint(0, SCREEN_WIDTH), random.randint(75, SCREEN_HEIGHT)), self.all_enemies, self.all_entities)
-        if random.random() < 0.05:
+        if random.random() < CHEST_SPAWN_CHANCE:
             Chest(
                 (random.randint(0, SCREEN_WIDTH), random.randint(75, SCREEN_HEIGHT)),
                 self.all_enemies,
@@ -99,7 +99,7 @@ class GameState:
             TextArea(
                 self.font,
                 "GAME TITLE HERE",
-                (0, 0, 0),
+                BLACK,
                 self.all_text,
                 center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 100),
             )
@@ -107,7 +107,7 @@ class GameState:
             TextArea(
                 self.font,
                 "Choose 5 units to start with below:",
-                (0, 0, 0),
+                BLACK,
                 self.all_text,
                 center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 70),
             )
@@ -116,7 +116,7 @@ class GameState:
                 class_text = TextArea(
                     self.font,
                     f"{class_type.__name__}s:",
-                    (0, 0, 0),
+                    BLACK,
                     self.all_text,
                     topright=(SCREEN_WIDTH / 2 - 50, SCREEN_HEIGHT / 2 + (50 * i)),
                 )
@@ -128,7 +128,7 @@ class GameState:
                 )
                 class_count_text = TitleScreenPlayableUnitsText(
                     self.font,
-                    (0, 0, 0),
+                    BLACK,
                     class_type,
                     self.all_text,
                     topleft=class_left_arrow.rect.move(10, 0).topright,
@@ -151,19 +151,19 @@ class GameState:
         elif self.screen_state == GameState.States.GAME_SCREEN:
             self.bg_surf = self.room_bg
             self.warrior_text = PlayableUnitsText(
-                self.font, (0, 200, 0), Warrior, 1, self.all_text, topleft=(10, 10)
+                self.font, GREEN, Warrior, 1, self.all_text, topleft=(10, 10)
             )
             self.ranger_text = PlayableUnitsText(
-                self.font, (0, 0, 0), Ranger, 2, self.all_text, topleft=(10, 30)
+                self.font, BLACK, Ranger, 2, self.all_text, topleft=(10, 30)
             )
             self.mage_text = PlayableUnitsText(
-                self.font, (0, 0, 0), Mage, 3, self.all_text, topleft=(10, 50)
+                self.font, BLACK, Mage, 3, self.all_text, topleft=(10, 50)
             )
 
             TextArea(
                 self.font,
                 "[i] Stats page",
-                (0, 0, 0),
+                BLACK,
                 self.all_text,
                 center=(SCREEN_WIDTH / 2, 20),
             )
@@ -171,7 +171,7 @@ class GameState:
             self.stronger_enemies_text = TextArea(
                 self.font,
                 "Enemies are getting stronger...",
-                (0, 0, 0),
+                BLACK,
                 center=(SCREEN_WIDTH / 2, 65),
             )
 
@@ -179,7 +179,7 @@ class GameState:
             for entity in [Warrior, Ranger, Mage, Skeleton, Zombie]:
                 GameScreenStatsText(
                     self.font,
-                    (0, 0, 0),
+                    BLACK,
                     entity,
                     "health",
                     lambda e: e.health,
@@ -189,7 +189,7 @@ class GameState:
                 pos += 20
                 GameScreenStatsText(
                     self.font,
-                    (0, 0, 0),
+                    BLACK,
                     entity,
                     "attack",
                     lambda e: e.attack,
@@ -199,7 +199,7 @@ class GameState:
                 pos += 20
                 GameScreenStatsText(
                     self.font,
-                    (0, 0, 0),
+                    BLACK,
                     entity,
                     "speed",
                     lambda e: e.speed,
@@ -210,7 +210,7 @@ class GameState:
                 if entity == Mage:
                     GameScreenStatsText(
                         self.font,
-                        (0, 0, 0),
+                        BLACK,
                         entity,
                         "attack speed",
                         lambda e: ((2000 // e.attack_speed_scale) + 1000) / 1000,
@@ -220,7 +220,7 @@ class GameState:
                 else:
                     GameScreenStatsText(
                         self.font,
-                        (0, 0, 0),
+                        BLACK,
                         entity,
                         "attack speed",
                         lambda e: ((1000 // e.attack_speed_scale) + 1000) / 1000,
@@ -232,12 +232,12 @@ class GameState:
             self.rooms_cleared = 0
             rooms_cleared = GameScreenRoomsClearedText(
                 self.font,
-                (0, 0, 0),
+                BLACK,
                 self.all_text,
                 topright=(SCREEN_WIDTH - 10, 10),
             )
             self.room_cleared_text = TextArea(
-                self.font, "Room Cleared!", (0, 0, 0), topleft=rooms_cleared.rect.move(0, 25).topleft
+                self.font, "Room Cleared!", BLACK, topleft=rooms_cleared.rect.move(0, 25).topleft
             )
 
             self.generate_room()
@@ -349,19 +349,19 @@ while running:
             if game.screen_state == GameState.States.GAME_SCREEN:
                 if event.key == K_1:
                     game.selected_unit = Warrior
-                    game.warrior_text.set_color((0, 200, 0))
-                    game.ranger_text.set_color((0, 0, 0))
-                    game.mage_text.set_color((0, 0, 0))
+                    game.warrior_text.set_color(GREEN)
+                    game.ranger_text.set_color(BLACK)
+                    game.mage_text.set_color(BLACK)
                 elif event.key == K_2:
                     game.selected_unit = Ranger
-                    game.warrior_text.set_color((0, 0, 0))
-                    game.ranger_text.set_color((0, 200, 0))
-                    game.mage_text.set_color((0, 0, 0))
+                    game.warrior_text.set_color(BLACK)
+                    game.ranger_text.set_color(GREEN)
+                    game.mage_text.set_color(BLACK)
                 elif event.key == K_3:
                     game.selected_unit = Mage
-                    game.warrior_text.set_color((0, 0, 0))
-                    game.ranger_text.set_color((0, 0, 0))
-                    game.mage_text.set_color((0, 200, 0))
+                    game.warrior_text.set_color(BLACK)
+                    game.ranger_text.set_color(BLACK)
+                    game.mage_text.set_color(GREEN)
                 elif event.key == K_i:
                     game.show_stats = not game.show_stats
 

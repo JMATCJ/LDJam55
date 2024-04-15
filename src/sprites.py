@@ -258,22 +258,25 @@ class Chest(Sprite):
         self.image = smoothscale(image.load(ASSETS_DIR / "chest.png").convert_alpha(), (64, 44))
         self.rect = self.image.get_rect(center=centerpos)
 
+        self.random_class = random.choice([Warrior, Ranger, Mage])
+        self.random_stat = random.randint(0, 3)
+
     def update(self, screen_rect, group, delta_time):
         self.rect.clamp_ip(screen_rect)
 
     def kill(self):
-        random_class = random.choice([Warrior, Ranger, Mage])
-        random_stat = random.randint(1, 4)
-        if random_stat == 1:
-            random_class.attack += 1
-        elif random_stat == 2:
-            random_class.speed += 1
-        elif random_stat == 3:
-            random_class.attack_speed_scale += 1
-        elif random_stat == 4:
-            random_class.health += 1
-        print(f"CHEST GAVE: {random_class} - {random_stat}")
+        if self.random_stat == 0:
+            self.random_class.health += 1
+        elif self.random_stat == 1:
+            self.random_class.attack += 1
+        elif self.random_stat == 2:
+            self.random_class.speed += 1
+        elif self.random_stat == 3:
+            self.random_class.attack_speed_scale += 1
+        print(f"CHEST GAVE: {self.random_class} - {self.random_stat}")
         super().kill()
+        # game.chest_tooltip_text.set_text(f"{self.random_class.__name__}s got +1 {NUMBER_TO_STAT_NAME[self.random_stat]}")
+        # game.all_text.add(game.chest_tooltip_text)
 
 
 class TextArea(Sprite):
