@@ -338,6 +338,24 @@ class GameScreenRoomsClearedText(TextArea):
         self.set_text(f"Rooms cleared: {game.rooms_cleared}")
 
 
+class GameScreenStatsText(TextArea):
+    def __init__(self, font, color, class_type, stat_type, stat_value, *groups, **pos):
+        super().__init__(font, f"Knight attack speed: XX", color, *groups, **pos)
+        self.class_type = class_type
+        self.stat_type = stat_type
+        self.stat_value = stat_value
+
+    def update(self, game):
+        if self.stat_type == "attack speed":
+            self.set_text(
+                f"{self.class_type.__name__} {self.stat_type}: {self.stat_value(self.class_type)}s"
+            )
+        else:
+            self.set_text(
+                f"{self.class_type.__name__} {self.stat_type}: {self.stat_value(self.class_type)}"
+            )
+
+
 class Button(Sprite):
     def __init__(self, button_size: tuple[int, int], color: tuple[int, int, int], handle_click_func: Callable[[], Any], *groups, **pos):
         super().__init__(*groups)

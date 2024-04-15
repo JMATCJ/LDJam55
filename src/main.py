@@ -1,6 +1,15 @@
 import enum
 import pygame
-from pygame.locals import QUIT, KEYDOWN, MOUSEBUTTONDOWN, MOUSEBUTTONUP, K_1, K_2, K_3
+from pygame.locals import (
+    QUIT,
+    KEYDOWN,
+    MOUSEBUTTONDOWN,
+    MOUSEBUTTONUP,
+    K_1,
+    K_2,
+    K_3,
+    K_i,
+)
 import random
 
 from consts import *
@@ -10,6 +19,7 @@ from sprites import (
     TitleScreenArrow,
     TitleScreenPlayableUnitsText,
     GameScreenRoomsClearedText,
+    GameScreenStatsText,
     TextArea,
     PlayableUnitsText,
     Warrior,
@@ -37,10 +47,14 @@ class GameState:
 
         self.rooms_cleared = 0
 
+        self.show_stats = False
+
         self.all_enemies = pygame.sprite.Group()
         self.all_players = pygame.sprite.Group()
         self.all_text = pygame.sprite.Group()
         self.all_entities = pygame.sprite.Group()
+
+        self.stats_text = pygame.sprite.Group()
 
         self.room_bg = pygame.image.load(ASSETS_DIR / "background.png").convert()
         self.game_over_bg = pygame.image.load(ASSETS_DIR / "game_over.png").convert()
@@ -79,6 +93,7 @@ class GameState:
         self.all_enemies.empty()
         self.all_entities.empty()
         self.all_text.empty()
+        self.stats_text.empty()
         if self.screen_state == GameState.States.TITLE_SCREEN:
             self.bg_surf = self.room_bg
             TextArea(
@@ -144,6 +159,61 @@ class GameState:
             self.mage_text = PlayableUnitsText(
                 self.font, (0, 0, 0), Mage, self.all_text, topleft=(10, 50)
             )
+
+            pos = 100
+            for entity in [Warrior, Ranger, Mage, Skeleton, Zombie]:
+                GameScreenStatsText(
+                    self.font,
+                    (0, 0, 0),
+                    entity,
+                    "health",
+                    lambda e: e.health,
+                    self.stats_text,
+                    topleft=(10, pos),
+                )
+                pos += 20
+                GameScreenStatsText(
+                    self.font,
+                    (0, 0, 0),
+                    entity,
+                    "attack",
+                    lambda e: e.attack,
+                    self.stats_text,
+                    topleft=(10, pos),
+                )
+                pos += 20
+                GameScreenStatsText(
+                    self.font,
+                    (0, 0, 0),
+                    entity,
+                    "speed",
+                    lambda e: e.speed,
+                    self.stats_text,
+                    topleft=(10, pos),
+                )
+                pos += 20
+                if entity == Mage:
+                    GameScreenStatsText(
+                        self.font,
+                        (0, 0, 0),
+                        entity,
+                        "attack speed",
+                        lambda e: ((2000 // e.attack_speed_scale) + 1000) / 1000,
+                        self.stats_text,
+                        topleft=(10, pos),
+                    )
+                else:
+                    GameScreenStatsText(
+                        self.font,
+                        (0, 0, 0),
+                        entity,
+                        "attack speed",
+                        lambda e: ((1000 // e.attack_speed_scale) + 1000) / 1000,
+                        self.stats_text,
+                        topleft=(10, pos),
+                    )
+                pos += 20
+
             self.rooms_cleared = 0
             rooms_cleared = GameScreenRoomsClearedText(
                 self.font,
@@ -158,13 +228,6 @@ class GameState:
             self.generate_room()
         elif self.screen_state == GameState.States.GAME_OVER:
             self.bg_surf = self.game_over_bg
-            TextArea(
-                self.font,
-                "GAME OVER LOSER + L + RATIO",
-                (0, 0, 0),
-                self.all_text,
-                center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 100),
-            )
 
             Button(
                 (50, 25),
@@ -217,11 +280,14 @@ class GameState:
                         self.generate_room()
 
         self.all_text.update(self)
+        self.stats_text.update(self)
 
     def draw(self, screen):
         screen.blit(self.bg_surf, self.bg_surf.get_rect())
         self.all_entities.draw(screen)
         self.all_text.draw(screen)
+        if self.show_stats:
+            self.stats_text.draw(screen)
 
     def __title_screen_play_click(self):
         if sum(self.playable_units.values()) == 5:
@@ -275,6 +341,8 @@ while running:
                     game.warrior_text.set_color((0, 0, 0))
                     game.ranger_text.set_color((0, 0, 0))
                     game.mage_text.set_color((0, 200, 0))
+                elif event.key == K_i:
+                    game.show_stats = not game.show_stats
 
     game.update(screen, delta_time)
     game.draw(screen)
