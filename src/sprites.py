@@ -27,6 +27,10 @@ class Unit(Sprite):
     attack_speed_scale = 1
     attack_distance = 0
     aoe_attack = 0
+    health_bar_bg = None
+    health_bar_fg_green = None
+    health_bar_fg_red = None
+    is_enemy = False
 
     def __init__(
         self,
@@ -67,9 +71,16 @@ class Unit(Sprite):
             (64, 64),
         )
 
+        if Unit.health_bar_bg is None:
+            Unit.health_bar_bg = smoothscale(image.load(ASSETS_DIR / "health_bar" / "background.png").convert(), (64, 6))
+            Unit.health_bar_fg_green = smoothscale(image.load(ASSETS_DIR / "health_bar" / "green.png").convert(), (64, 6))
+            Unit.health_bar_fg_red = smoothscale(image.load(ASSETS_DIR / "health_bar" / "red.png").convert(), (64, 6))
+
         # The surface that should be currently drawn
         self.image = self.standing_surf
         self.rect = self.image.get_rect(center=centerpos)
+        self.health_bar_surf = Unit.health_bar_fg_red if type(self).is_enemy else Unit.health_bar_fg_green
+        self.health_bar_rect = self.health_bar_bg.get_rect(topleft=self.rect.move(0, -10).topleft)
 
     def __repr__(self):
         attack_speed = type(self).attack_speed(self.attack_speed_scale)
@@ -98,7 +109,14 @@ class Unit(Sprite):
         self.__set_surf()
         self.move_nearest_ip(group)
         self.rect.clamp_ip(screen_rect)
+        self.health_bar_rect.clamp_ip(screen_rect)
         self.do_attack(group)
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+        screen.blit(self.health_bar_bg, self.health_bar_rect)
+        screen.blit(self.health_bar_surf, self.health_bar_rect, self.health_bar_surf.get_rect(w=self.health_bar_surf.get_width() * (self.health / type(self).health)))
+
 
     @staticmethod
     def __collided(me: 'Unit', other: 'Unit') -> bool:
@@ -120,6 +138,7 @@ class Unit(Sprite):
                 vec = dist.normalize() * self.speed
                 if not pygame.sprite.spritecollideany(self, group, self.__collided):
                     self.rect.move_ip(vec)
+                    self.health_bar_rect.move_ip(vec)
                     self.walking = True
                     return
         self.walking = False
@@ -205,6 +224,7 @@ class Skeleton(Unit):
     attack = 1
     speed = 3
     attack_speed = attack_2_to_1
+    is_enemy = True
 
     def __init__(self, centerpos: tuple[int, int], *groups):
         super().__init__(centerpos, *groups)
@@ -223,6 +243,7 @@ class Zombie(Unit):
     attack = 2
     speed = 2
     attack_speed = attack_2_to_1
+    is_enemy = True
 
     def __init__(self, centerpos: tuple[int, int], *groups):
         super().__init__(centerpos,  *groups)
@@ -236,17 +257,34 @@ class Zombie(Unit):
 
 
 class Chest(Sprite):
+    health = 10
+
     def __init__(self, centerpos, *groups):
         super().__init__(*groups)
         self.health = 10
         self.image = smoothscale(image.load(ASSETS_DIR / "chest.png").convert_alpha(), (64, 44))
         self.rect = self.image.get_rect(center=centerpos)
 
+        if Unit.health_bar_bg is None:
+            Unit.health_bar_bg = smoothscale(image.load(ASSETS_DIR / "health_bar" / "background.png").convert(), (64, 6))
+            Unit.health_bar_fg_green = smoothscale(image.load(ASSETS_DIR / "health_bar" / "green.png").convert(), (64, 6))
+            Unit.health_bar_fg_red = smoothscale(image.load(ASSETS_DIR / "health_bar" / "red.png").convert(), (64, 6))
+
+        self.health_bar_surf = Unit.health_bar_fg_red
+        self.health_bar_rect = Unit.health_bar_bg.get_rect(topleft=self.rect.move(0, -10).topleft)
+
         self.random_class = random.choice([Warrior, Ranger, Mage])
         self.random_stat = random.randint(0, 3)
 
     def update(self, screen_rect, group, delta_time):
         self.rect.clamp_ip(screen_rect)
+        self.health_bar_rect.clamp_ip(screen_rect)
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+        screen.blit(Unit.health_bar_bg, self.health_bar_rect)
+        screen.blit(self.health_bar_surf, self.health_bar_rect, self.health_bar_surf.get_rect(
+            w=self.health_bar_surf.get_width() * (self.health / type(self).health)))
 
     def kill(self):
         if self.random_stat == 0:

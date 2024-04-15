@@ -282,7 +282,8 @@ class GameState:
 
     def draw(self, screen):
         screen.blit(self.bg_surf, self.bg_surf.get_rect())
-        self.all_entities.draw(screen)
+        for entity in self.all_entities:
+            entity.draw(screen)
         self.all_text.draw(screen)
         if self.show_stats:
             self.stats_text.draw(screen)
@@ -302,6 +303,7 @@ class GameState:
 pygame.init()
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Storm the Castle")
 clock = pygame.time.Clock()
 
 game = GameState(GameState.States.TITLE_SCREEN, False)
