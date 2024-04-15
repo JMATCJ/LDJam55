@@ -29,7 +29,7 @@ class GameState:
     def __init__(self, state: States, muted: bool):
         # Set initial values for game states
         self.screen_state = state
-        self.font = pygame.font.Font(pygame.font.get_default_font(), 24)
+        self.font = pygame.font.Font(ASSETS_DIR / "font" / "morris-roman.black.ttf", 24)
 
         self.selected_unit = Warrior
         self.playable_units = {Warrior: 0, Ranger: 0, Mage: 0}
@@ -100,7 +100,7 @@ class GameState:
             for i, class_type in enumerate([Warrior, Ranger, Mage]):
                 class_text = TextArea(
                     self.font,
-                    f"# {class_type.__name__}s:",
+                    f"{class_type.__name__}s:",
                     (0, 0, 0),
                     self.all_text,
                     topright=(SCREEN_WIDTH / 2 - 50, SCREEN_HEIGHT / 2 + (50 * i)),

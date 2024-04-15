@@ -1,7 +1,12 @@
 LDJam50 (c) by JMATCJ
 
-The files in the "assets" directory of the LDJam55 project are licensed under a
-Creative Commons Attribution-ShareAlike 4.0 International License.
+The files in the "assets" directory of the LDJam55 project, not including the
+"font" directory, are licensed under a Creative Commons Attribution-ShareAlike
+4.0 International License.
 
-You should have received a copy of the license along with this
-work. If not, see <http://creativecommons.org/licenses/by-sa/4.0/>.
+You should have received a copy of the license along with this work. If not,
+see <http://creativecommons.org/licenses/by-sa/4.0/>.
+
+The "morris-roman.black.ttf" font, located in the "assets/font" directory, is
+licensed under the 1001Fonts FFC license, available at
+<https://www.1001fonts.com/licenses/ffc.html>.
