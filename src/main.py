@@ -160,6 +160,21 @@ class GameState:
                 self.font, (0, 0, 0), Mage, 3, self.all_text, topleft=(10, 50)
             )
 
+            TextArea(
+                self.font,
+                "[i] Stats page",
+                (0, 0, 0),
+                self.all_text,
+                center=(SCREEN_WIDTH / 2, 20),
+            )
+
+            self.stronger_enemies_text = TextArea(
+                self.font,
+                "Enemies are getting stronger...",
+                (0, 0, 0),
+                center=(SCREEN_WIDTH / 2, 65),
+            )
+
             pos = 100
             for entity in [Warrior, Ranger, Mage, Skeleton, Zombie]:
                 GameScreenStatsText(
@@ -247,14 +262,19 @@ class GameState:
                 self.transition_state(GameState.States.GAME_OVER)
             elif not self.all_enemies:
                 if self.room_transition_timer is None:
-                    self.room_transition_timer = 0
                     self.rooms_cleared += 1
+                    self.room_transition_timer = (
+                        -1000 if self.rooms_cleared % 3 == 0 else 0
+                    )
                     self.all_text.add(self.room_cleared_text)
+                    if self.rooms_cleared % 3 == 0:
+                        self.all_text.add(self.stronger_enemies_text)
                 else:
                     self.room_transition_timer += delta_time
                     if self.room_transition_timer >= 1000:
                         self.room_transition_timer = None
                         self.room_cleared_text.kill()
+                        self.stronger_enemies_text.kill()
                         for entity in self.all_players:
                             self.playable_units[type(entity)] += 1
                             entity.kill()
@@ -294,8 +314,9 @@ class GameState:
             self.transition_state(GameState.States.GAME_SCREEN)
 
     def __game_over_play_click(self):
-        Skeleton.reset_stats()
-        Zombie.reset_stats()
+        for unit in [Warrior, Ranger, Mage, Skeleton, Zombie]:
+            unit.reset_stats()
+
         self.selected_unit = Warrior
         self.transition_state(GameState.States.TITLE_SCREEN)
 

@@ -155,6 +155,13 @@ class Warrior(Unit):
             *groups,
         )
 
+    @classmethod
+    def reset_stats(cls):
+        cls.health = 5
+        cls.attack = 2
+        cls.speed = 5
+        cls.attack_speed_scale = 1
+
 
 class Ranger(Unit):
     health = 3
@@ -175,6 +182,13 @@ class Ranger(Unit):
             *groups,
         )
 
+    @classmethod
+    def reset_stats(cls):
+        cls.health = 3
+        cls.attack = 3
+        cls.speed = 6
+        cls.attack_speed_scale = 1
+
 
 class Mage(Unit):
     health = 1
@@ -194,6 +208,13 @@ class Mage(Unit):
             True,
             *groups,
         )
+
+    @classmethod
+    def reset_stats(cls):
+        cls.health = 1
+        cls.attack = 5
+        cls.speed = 4
+        cls.attack_speed_scale = 1
 
 
 class Skeleton(Unit):
