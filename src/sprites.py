@@ -1,6 +1,6 @@
 import random
 import pygame
-from pygame import image, Surface
+from pygame import image, Surface, Rect
 from pygame.font import Font
 from pygame.math import Vector2
 from pygame.sprite import Group, Sprite
@@ -10,28 +10,33 @@ from typing import Any, Callable
 from consts import *
 
 
+def attack_2_to_1(scale: int) -> int:
+    return 1000 // scale + 1000
+
+
+def attack_3_to_2(scale: int) -> int:
+    return 1000 // scale + 2000
+
+
 class Unit(Sprite):
+    image_folder_name = None
+    health = 0
+    attack = 0
+    speed = 0
+    attack_speed = None
+    attack_speed_scale = 1
+    attack_distance = 0
+    aoe_attack = 0
+
     def __init__(
         self,
         centerpos: tuple[int, int],
-        image_folder_name: str,
-        health: int,
-        attack: int,
-        speed: int,
-        attack_speed: int,
-        attack_distance: int,
-        aoe_attack: bool,
         *groups,
     ):
         super().__init__(*groups)
 
         # Stats
-        self.health = health
-        self.attack = attack
-        self.speed = speed
-        self.attack_speed = attack_speed
-        self.attack_distance = attack_distance
-        self.aoe_attack = aoe_attack
+        self.health = type(self).health
         self.time_since_last_attack = 0
 
         # For animations
@@ -40,24 +45,24 @@ class Unit(Sprite):
 
         # Surfaces
         self.standing_surf = smoothscale(
-            image.load(ASSETS_DIR / image_folder_name / "standing.png").convert_alpha(),
+            image.load(ASSETS_DIR / type(self).image_folder_name / "standing.png").convert_alpha(),
             (64, 64),
         )
         self.attacking_surf = smoothscale(
             image.load(
-                ASSETS_DIR / image_folder_name / "attacking.png"
+                ASSETS_DIR / type(self).image_folder_name / "attacking.png"
             ).convert_alpha(),
             (64, 64),
         )
         self.walking_1_surf = smoothscale(
             image.load(
-                ASSETS_DIR / image_folder_name / "walking_1.png"
+                ASSETS_DIR / type(self).image_folder_name / "walking_1.png"
             ).convert_alpha(),
             (64, 64),
         )
         self.walking_2_surf = smoothscale(
             image.load(
-                ASSETS_DIR / image_folder_name / "walking_2.png"
+                ASSETS_DIR / type(self).image_folder_name / "walking_2.png"
             ).convert_alpha(),
             (64, 64),
         )
@@ -67,7 +72,8 @@ class Unit(Sprite):
         self.rect = self.image.get_rect(center=centerpos)
 
     def __repr__(self):
-        return f"{self.__class__.__name__}(pos={self.rect.center}, {self.health=}, {self.attack=}, {self.speed=}, {self.attack_speed=})"
+        attack_speed = type(self).attack_speed(self.attack_speed_scale)
+        return f"{self.__class__.__name__}(pos={self.rect.center}, {self.health=}, {self.attack=}, {self.speed=}, self.attack_speed={attack_speed})"
 
     def __set_surf(self):
         if self.walking:
@@ -119,7 +125,7 @@ class Unit(Sprite):
         self.walking = False
 
     def do_attack(self, group: Group):
-        if self.time_since_last_attack >= self.attack_speed:
+        if self.time_since_last_attack >= type(self).attack_speed(self.attack_speed_scale):
             attacked = pygame.sprite.spritecollide(self, group, False, self.__collided)
             if attacked:
                 self.image = self.attacking_surf
@@ -129,7 +135,7 @@ class Unit(Sprite):
                     if entity.health <= 0:
                         entity.kill()
                     print(
-                        f"{type(self)} health: {self.health} | {type(entity)} health: {entity.health}"
+                        f"{type(self).__name__} health: {self.health} | {type(entity).__name__} health: {entity.health}"
                     )
                     if not self.aoe_attack:
                         break
@@ -137,23 +143,14 @@ class Unit(Sprite):
 
 
 class Warrior(Unit):
+    image_folder_name = "knight"
     health = 5
     attack = 2
     speed = 5
-    attack_speed_scale = 1
+    attack_speed = attack_2_to_1
 
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(
-            centerpos,
-            "knight",
-            Warrior.health,
-            Warrior.attack,
-            Warrior.speed,
-            (1000 // Warrior.attack_speed_scale) + 1000,
-            0,
-            False,
-            *groups,
-        )
+        super().__init__(centerpos, *groups)
 
     @classmethod
     def reset_stats(cls):
@@ -164,23 +161,15 @@ class Warrior(Unit):
 
 
 class Ranger(Unit):
+    image_folder_name = "ranger"
     health = 3
     attack = 3
     speed = 6
-    attack_speed_scale = 1
+    attack_speed = attack_2_to_1
+    attack_distance = 200
 
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(
-            centerpos,
-            "ranger",
-            Ranger.health,
-            Ranger.attack,
-            Ranger.speed,
-            (1000 // Ranger.attack_speed_scale) + 1000,
-            200,
-            False,
-            *groups,
-        )
+        super().__init__(centerpos, *groups)
 
     @classmethod
     def reset_stats(cls):
@@ -191,23 +180,16 @@ class Ranger(Unit):
 
 
 class Mage(Unit):
+    image_folder_name = "mage"
     health = 1
     attack = 5
     speed = 4
-    attack_speed_scale = 1
+    attack_speed = attack_3_to_2
+    attack_distance = 300
+    aoe_attack = True
 
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(
-            centerpos,
-            "mage",
-            Mage.health,
-            Mage.attack,
-            Mage.speed,
-            (1000 // Mage.attack_speed_scale) + 2000,
-            300,
-            True,
-            *groups,
-        )
+        super().__init__(centerpos, *groups)
 
     @classmethod
     def reset_stats(cls):
@@ -218,13 +200,14 @@ class Mage(Unit):
 
 
 class Skeleton(Unit):
+    image_folder_name = "skeleton"
     health = 3
     attack = 1
     speed = 3
-    attack_speed_scale = 1
+    attack_speed = attack_2_to_1
 
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, "skeleton", Skeleton.health, Skeleton.attack, Skeleton.speed, (1000//Skeleton.attack_speed_scale) + 1000, 0, False, *groups)
+        super().__init__(centerpos, *groups)
 
     @classmethod
     def reset_stats(cls):
@@ -235,13 +218,14 @@ class Skeleton(Unit):
 
 
 class Zombie(Unit):
+    image_folder_name = "zombie"
     health = 2
     attack = 2
     speed = 2
-    attack_speed_scale = 1
+    attack_speed = attack_2_to_1
 
     def __init__(self, centerpos: tuple[int, int], *groups):
-        super().__init__(centerpos, "zombie", Zombie.health, Zombie.attack, Zombie.speed, (1000//Zombie.attack_speed_scale) + 1000, 0, False, *groups)
+        super().__init__(centerpos,  *groups)
 
     @classmethod
     def reset_stats(cls):
@@ -273,10 +257,8 @@ class Chest(Sprite):
             self.random_class.speed += 1
         elif self.random_stat == 3:
             self.random_class.attack_speed_scale += 1
-        print(f"CHEST GAVE: {self.random_class} - {self.random_stat}")
+        pygame.event.post(pygame.event.Event(SHOW_NOTIFICATION, text=f"Upgraded {self.random_class.__name__}'s {NUMBER_TO_STAT_NAME[self.random_stat]}"))
         super().kill()
-        # game.chest_tooltip_text.set_text(f"{self.random_class.__name__}s got +1 {NUMBER_TO_STAT_NAME[self.random_stat]}")
-        # game.all_text.add(game.chest_tooltip_text)
 
 
 class TextArea(Sprite):
@@ -296,37 +278,62 @@ class TextArea(Sprite):
         self.font = font
         self.color = color
         self.image: Surface | None = None
+        self.rect: Rect | None = None
+        self.pos = pos
         self.set_text(value)
-        self.rect = self.image.get_rect(**pos)
 
-    def set_text(self, text: str):
+    def set_text(self, text: str, color: tuple[int, int, int] | None = None):
+        if color is not None:
+            self.color = color
         self.image = self.font.render(text, True, self.color)
+        self.rect = self.image.get_rect(**self.pos)
 
     def set_color(self, color):
         self.color = color
 
 
-class PlayableUnitsText(TextArea):
+class TimedTextArea(TextArea):
     def __init__(
-        self,
-        font: Font,
-        color,
-        class_type,
-        key,
-        *groups,
-        **pos,
+            self,
+            font: Font,
+            value: str,
+            color,
+            timeout: int,
+            *groups,
+            **pos,
     ):
-        super().__init__(
-            font, f"{class_type.__name__} units: 0", color, *groups, **pos
-        )
-        self.class_type = class_type
-        self.key = key
+        super().__init__(font, value, color, *groups, **pos)
+        self.timeout = timeout
+        self.timer = 0
 
-    def update(self, gamestate):
-        self.set_text(
-            f"[{self.key}] {self.class_type.__name__} units: {gamestate.playable_units[self.class_type]}"
-        )
-        self.set_color(self.color)
+    def update(self, game, delta_time):
+        self.timer += delta_time
+        if self.timer >= self.timeout:
+            self.kill()
+
+    def set_text(self, text: str, color: tuple[int, int, int] | None = None):
+        self.timer = 0
+        super().set_text(text, color)
+
+    def add(self, *groups):
+        self.timer = 0
+        super().add(*groups)
+
+
+class UpdatableTextArea(TextArea):
+    def __init__(
+            self,
+            font: Font,
+            color,
+            text_callback,
+            *groups,
+            **pos,
+    ):
+        super().__init__(font, text_callback(), color, *groups, **pos)
+        self.text_callback = text_callback
+
+    def update(self, game, delta_time):
+        self.set_text(self.text_callback())
 
 
 class TitleScreenArrow(Sprite):
@@ -345,37 +352,6 @@ class TitleScreenArrow(Sprite):
         game.playable_units[self.class_type] += self.arrow_type
         if game.playable_units[self.class_type] < 0:
             game.playable_units[self.class_type] = 0
-
-
-class TitleScreenPlayableUnitsText(TextArea):
-    def __init__(self, font: Font, color, class_type, *groups, **pos):
-        super().__init__(font, "0", color, *groups, **pos)
-        self.class_type = class_type
-
-    def update(self, game):
-        self.set_text(f"{game.playable_units[self.class_type]}")
-
-
-class GameScreenRoomsClearedText(TextArea):
-    def __init__(self, font: Font, color, *groups, **pos):
-        super().__init__(font, f"Rooms cleared: XX", color, *groups, **pos)
-
-    def update(self, game):
-        self.set_text(f"Rooms cleared: {game.rooms_cleared}")
-
-
-class GameScreenStatsText(TextArea):
-    def __init__(self, font, color, class_type, stat_type, stat_value, *groups, **pos):
-        super().__init__(font, f"Knight attack speed: XX", color, *groups, **pos)
-        self.class_type = class_type
-        self.stat_type = stat_type
-        self.stat_value = stat_value
-
-    def update(self, game):
-        is_attack_speed = self.stat_type == "attack speed"
-        self.set_text(
-            f"{self.class_type.__name__} {self.stat_type}: {self.stat_value(self.class_type)}{'s' if is_attack_speed else ''}"
-        )
 
 
 class Button(Sprite):

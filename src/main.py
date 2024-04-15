@@ -17,11 +17,9 @@ from sprites import (
     Skeleton,
     Zombie,
     TitleScreenArrow,
-    TitleScreenPlayableUnitsText,
-    GameScreenRoomsClearedText,
-    GameScreenStatsText,
     TextArea,
-    PlayableUnitsText,
+    TimedTextArea,
+    UpdatableTextArea,
     Warrior,
     Ranger,
     Mage,
@@ -53,8 +51,8 @@ class GameState:
         self.all_players = pygame.sprite.Group()
         self.all_text = pygame.sprite.Group()
         self.all_entities = pygame.sprite.Group()
-
         self.stats_text = pygame.sprite.Group()
+        self.all_notifications = pygame.sprite.Group()
 
         self.room_bg = pygame.image.load(ASSETS_DIR / "background.png").convert()
         self.game_over_bg = pygame.image.load(ASSETS_DIR / "game_over" / "background.png").convert()
@@ -79,14 +77,26 @@ class GameState:
         if pos[1] >= 75 and not any(e.rect.collidepoint(pos) for e in self.all_enemies):
             if self.playable_units[self.selected_unit] > 0:
                 self.playable_units[self.selected_unit] -= 1
-                spawned_unit = self.selected_unit(
-                    pos, self.all_players, self.all_entities
-                )
-                print(spawned_unit)
+                self.selected_unit(pos, self.all_players, self.all_entities)
 
     def transition_state(self, new_state: States):
         self.screen_state = new_state
         self.build_screen()
+
+    def add_notification(self, text: str):
+        centerpos = (SCREEN_WIDTH / 2, 45)
+        for notif in self.all_notifications:
+            if notif.rect.collidepoint(centerpos):
+                centerpos = (SCREEN_WIDTH / 2, notif.rect.centery + notif.rect.h)
+        TimedTextArea(
+            self.font,
+            text,
+            BLACK,
+            3000,
+            self.all_notifications,
+            self.all_text,
+            center=centerpos
+        )
 
     def build_screen(self):
         self.all_players.empty()
@@ -94,6 +104,7 @@ class GameState:
         self.all_entities.empty()
         self.all_text.empty()
         self.stats_text.empty()
+        self.all_notifications.empty()
         if self.screen_state == GameState.States.TITLE_SCREEN:
             self.bg_surf = self.room_bg
             TextArea(
@@ -126,10 +137,10 @@ class GameState:
                     self.all_text,
                     topleft=class_text.rect.move(10, 0).topright,
                 )
-                class_count_text = TitleScreenPlayableUnitsText(
+                class_count_text = UpdatableTextArea(
                     self.font,
                     BLACK,
-                    class_type,
+                    lambda c=class_type: f"{self.playable_units[c]}",
                     self.all_text,
                     topleft=class_left_arrow.rect.move(10, 0).topright,
                 )
@@ -150,14 +161,14 @@ class GameState:
 
         elif self.screen_state == GameState.States.GAME_SCREEN:
             self.bg_surf = self.room_bg
-            self.warrior_text = PlayableUnitsText(
-                self.font, GREEN, Warrior, 1, self.all_text, topleft=(10, 10)
+            self.warrior_text = UpdatableTextArea(
+                self.font, GREEN, lambda: f"[1] Warrior units: {self.playable_units[Warrior]}", self.all_text, topleft=(10, 10)
             )
-            self.ranger_text = PlayableUnitsText(
-                self.font, BLACK, Ranger, 2, self.all_text, topleft=(10, 30)
+            self.ranger_text = UpdatableTextArea(
+                self.font, BLACK, lambda: f"[2] Ranger units: {self.playable_units[Ranger]}", self.all_text, topleft=(10, 30)
             )
-            self.mage_text = PlayableUnitsText(
-                self.font, BLACK, Mage, 3, self.all_text, topleft=(10, 50)
+            self.mage_text = UpdatableTextArea(
+                self.font, BLACK, lambda: f"[3] Mage units: {self.playable_units[Mage]}", self.all_text, topleft=(10, 50)
             )
 
             TextArea(
@@ -168,76 +179,51 @@ class GameState:
                 center=(SCREEN_WIDTH / 2, 20),
             )
 
-            self.stronger_enemies_text = TextArea(
-                self.font,
-                "Enemies are getting stronger...",
-                BLACK,
-                center=(SCREEN_WIDTH / 2, 65),
-            )
-
             pos = 100
             for entity in [Warrior, Ranger, Mage, Skeleton, Zombie]:
-                GameScreenStatsText(
+                UpdatableTextArea(
                     self.font,
                     BLACK,
-                    entity,
-                    "health",
-                    lambda e: e.health,
+                    lambda e=entity: f"{e.__name__} health: {e.health}",
+                    self.stats_text,
+                    topleft=(10, pos)
+                )
+                pos += 20
+                UpdatableTextArea(
+                    self.font,
+                    BLACK,
+                    lambda e=entity: f"{e.__name__} attack: {e.attack}",
                     self.stats_text,
                     topleft=(10, pos),
                 )
                 pos += 20
-                GameScreenStatsText(
+                UpdatableTextArea(
                     self.font,
                     BLACK,
-                    entity,
-                    "attack",
-                    lambda e: e.attack,
+                    lambda e=entity: f"{e.__name__} speed: {e.speed}",
                     self.stats_text,
                     topleft=(10, pos),
                 )
                 pos += 20
-                GameScreenStatsText(
+                UpdatableTextArea(
                     self.font,
                     BLACK,
-                    entity,
-                    "speed",
-                    lambda e: e.speed,
+                    lambda e=entity: f"{e.__name__} attack speed: {e.attack_speed(e.attack_speed_scale) / 1000}s",
                     self.stats_text,
                     topleft=(10, pos),
                 )
-                pos += 20
-                if entity == Mage:
-                    GameScreenStatsText(
-                        self.font,
-                        BLACK,
-                        entity,
-                        "attack speed",
-                        lambda e: ((2000 // e.attack_speed_scale) + 1000) / 1000,
-                        self.stats_text,
-                        topleft=(10, pos),
-                    )
-                else:
-                    GameScreenStatsText(
-                        self.font,
-                        BLACK,
-                        entity,
-                        "attack speed",
-                        lambda e: ((1000 // e.attack_speed_scale) + 1000) / 1000,
-                        self.stats_text,
-                        topleft=(10, pos),
-                    )
                 pos += 20
 
             self.rooms_cleared = 0
-            rooms_cleared = GameScreenRoomsClearedText(
+            rooms_cleared = UpdatableTextArea(
                 self.font,
                 BLACK,
+                lambda: f"Rooms cleared: {self.rooms_cleared}",
                 self.all_text,
                 topright=(SCREEN_WIDTH - 10, 10),
             )
-            self.room_cleared_text = TextArea(
-                self.font, "Room Cleared!", BLACK, topleft=rooms_cleared.rect.move(0, 25).topleft
+            self.room_cleared_text = TimedTextArea(
+                self.font, "Room Cleared!", BLACK, 1000, topleft=rooms_cleared.rect.move(0, 25).topleft
             )
 
             self.generate_room()
@@ -263,44 +249,36 @@ class GameState:
             elif not self.all_enemies:
                 if self.room_transition_timer is None:
                     self.rooms_cleared += 1
-                    self.room_transition_timer = (
-                        -1000 if self.rooms_cleared % 3 == 0 else 0
-                    )
-                    self.all_text.add(self.room_cleared_text)
+                    self.room_transition_timer = 0
+                    self.room_cleared_text.add(self.all_text)
                     if self.rooms_cleared % 3 == 0:
-                        self.all_text.add(self.stronger_enemies_text)
+                        pygame.event.post(pygame.event.Event(SHOW_NOTIFICATION, text="Enemies are getting stronger..."))
                 else:
                     self.room_transition_timer += delta_time
                     if self.room_transition_timer >= 1000:
                         self.room_transition_timer = None
-                        self.room_cleared_text.kill()
-                        self.stronger_enemies_text.kill()
                         for entity in self.all_players:
                             self.playable_units[type(entity)] += 1
                             entity.kill()
                         if self.rooms_cleared % 3 == 0:
-                            Skeleton.health += 1
-                            random_stat = random.randint(1, 3)
-                            if random_stat == 1:
-                                Skeleton.attack += 1
-                            elif random_stat == 2:
-                                Skeleton.speed += 1
-                            elif random_stat == 3:
-                                Skeleton.attack_speed_scale += 1
-                            Zombie.health += 1
-                            random_stat = random.randint(1, 3)
-                            if random_stat == 1:
-                                Zombie.attack += 1
-                            elif random_stat == 2:
-                                Zombie.speed += 1
-                            elif random_stat == 3:
-                                Zombie.attack_speed_scale += 1
+                            for enemy_type in [Skeleton, Zombie]:
+                                random_stat = random.randint(0, 3)
+                                if random_stat == 0:
+                                    enemy_type.health += 1
+                                elif random_stat == 1:
+                                    enemy_type.attack += 1
+                                elif random_stat == 2:
+                                    enemy_type.speed += 1
+                                elif random_stat == 3:
+                                    enemy_type.attack_speed_scale += 1
                         if self.rooms_cleared % 5 == 0:
-                            self.playable_units[random.choice([Warrior, Ranger, Mage])] += 1
+                            new_unit = random.choice([Warrior, Ranger, Mage])
+                            self.playable_units[new_unit] += 1
+                            pygame.event.post(pygame.event.Event(SHOW_NOTIFICATION, text=f"A {new_unit.__name__} has joined your party"))
                         self.generate_room()
 
-        self.all_text.update(self)
-        self.stats_text.update(self)
+        self.all_text.update(self, delta_time)
+        self.stats_text.update(self, delta_time)
 
     def draw(self, screen):
         screen.blit(self.bg_surf, self.bg_surf.get_rect())
@@ -364,6 +342,8 @@ while running:
                     game.mage_text.set_color(GREEN)
                 elif event.key == K_i:
                     game.show_stats = not game.show_stats
+        elif event.type == SHOW_NOTIFICATION and game.screen_state == GameState.States.GAME_SCREEN:
+            game.add_notification(event.text)
 
     game.update(screen, delta_time)
     game.draw(screen)

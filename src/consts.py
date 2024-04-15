@@ -1,4 +1,5 @@
 from pathlib import Path
+from pygame.event import custom_type
 import sys
 
 SCREEN_WIDTH = 800
@@ -8,6 +9,8 @@ MOUSE_RIGHT_CLICK = 3
 BLACK = (0, 0, 0)
 GREEN = (0, 200, 0)
 CHEST_SPAWN_CHANCE = 0.05
+SHOW_NOTIFICATION = custom_type()
+
 
 NUMBER_TO_STAT_NAME = ["Health", "Attack", "Speed", "Attack Speed"]
 
