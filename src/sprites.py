@@ -288,6 +288,7 @@ class PlayableUnitsText(TextArea):
         font: Font,
         color,
         class_type,
+        key,
         *groups,
         **pos,
     ):
@@ -295,10 +296,11 @@ class PlayableUnitsText(TextArea):
             font, f"{class_type.__name__} units: 0", color, *groups, **pos
         )
         self.class_type = class_type
+        self.key = key
 
     def update(self, gamestate):
         self.set_text(
-            f"{self.class_type.__name__} units: {gamestate.playable_units[self.class_type]}"
+            f"[{self.key}] {self.class_type.__name__} units: {gamestate.playable_units[self.class_type]}"
         )
         self.set_color(self.color)
 
@@ -346,22 +348,17 @@ class GameScreenStatsText(TextArea):
         self.stat_value = stat_value
 
     def update(self, game):
-        if self.stat_type == "attack speed":
-            self.set_text(
-                f"{self.class_type.__name__} {self.stat_type}: {self.stat_value(self.class_type)}s"
-            )
-        else:
-            self.set_text(
-                f"{self.class_type.__name__} {self.stat_type}: {self.stat_value(self.class_type)}"
-            )
+        is_attack_speed = self.stat_type == "attack speed"
+        self.set_text(
+            f"{self.class_type.__name__} {self.stat_type}: {self.stat_value(self.class_type)}{'s' if is_attack_speed else ''}"
+        )
 
 
 class Button(Sprite):
-    def __init__(self, button_size: tuple[int, int], color: tuple[int, int, int], handle_click_func: Callable[[], Any], *groups, **pos):
+    def __init__(self, button_size: tuple[int, int], image_path: Path, handle_click_func: Callable[[], Any], *groups, **pos):
         super().__init__(*groups)
 
-        self.image = Surface(button_size)
-        self.image.fill(color)
+        self.image = smoothscale(image.load(image_path).convert_alpha(), button_size)
         self.rect = self.image.get_rect(**pos)
         self.click_func = handle_click_func
 

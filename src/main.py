@@ -57,7 +57,7 @@ class GameState:
         self.stats_text = pygame.sprite.Group()
 
         self.room_bg = pygame.image.load(ASSETS_DIR / "background.png").convert()
-        self.game_over_bg = pygame.image.load(ASSETS_DIR / "game_over.png").convert()
+        self.game_over_bg = pygame.image.load(ASSETS_DIR / "game_over" / "background.png").convert()
 
         self.bg_surf = self.room_bg
 
@@ -141,23 +141,23 @@ class GameState:
                 )
 
             Button(
-                (50, 25),
-                (0, 127, 0),
+                (160, 80),
+                ASSETS_DIR / "title_screen" / "play_button.png",
                 self.__title_screen_play_click,
                 self.all_text,
-                center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 150)
+                center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 200)
             )
 
         elif self.screen_state == GameState.States.GAME_SCREEN:
             self.bg_surf = self.room_bg
             self.warrior_text = PlayableUnitsText(
-                self.font, (0, 200, 0), Warrior, self.all_text, topleft=(10, 10)
+                self.font, (0, 200, 0), Warrior, 1, self.all_text, topleft=(10, 10)
             )
             self.ranger_text = PlayableUnitsText(
-                self.font, (0, 0, 0), Ranger, self.all_text, topleft=(10, 30)
+                self.font, (0, 0, 0), Ranger, 2, self.all_text, topleft=(10, 30)
             )
             self.mage_text = PlayableUnitsText(
-                self.font, (0, 0, 0), Mage, self.all_text, topleft=(10, 50)
+                self.font, (0, 0, 0), Mage, 3, self.all_text, topleft=(10, 50)
             )
 
             pos = 100
@@ -230,11 +230,11 @@ class GameState:
             self.bg_surf = self.game_over_bg
 
             Button(
-                (50, 25),
-                (127, 0, 0),
+                (427, 108),
+                ASSETS_DIR / "game_over" / "play_again.png",
                 self.__game_over_play_click,
                 self.all_text,
-                center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 150)
+                center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 230)
             )
 
     def update(self, screen, delta_time):
