@@ -44,6 +44,8 @@ class GameState:
         self.room_transition_timer = None
 
         self.rooms_cleared = 0
+        self.lower_bound = 1
+        self.upper_bound = 1
 
         self.show_stats = False
 
@@ -64,7 +66,15 @@ class GameState:
     def generate_room(self):
         for entity in self.all_enemies:
             entity.kill()
-        for _ in range(random.randint(1, 5)):
+
+        if self.rooms_cleared == 1:
+            self.upper_bound += 2
+
+        if self.rooms_cleared % 5 == 0 and self.rooms_cleared != 0:
+            self.lower_bound += 1
+            self.upper_bound += 1
+
+        for _ in range(random.randint(self.lower_bound, self.upper_bound)):
             random.choice([Skeleton, Zombie])((random.randint(0, SCREEN_WIDTH), random.randint(75, SCREEN_HEIGHT)), self.all_enemies, self.all_entities)
         if random.random() < CHEST_SPAWN_CHANCE:
             Chest(
