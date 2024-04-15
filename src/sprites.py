@@ -109,7 +109,7 @@ class Unit(Sprite):
         self.__set_surf()
         self.move_nearest_ip(group)
         self.rect.clamp_ip(screen_rect)
-        self.health_bar_rect.clamp_ip(screen_rect)
+        self.health_bar_rect = self.health_bar_bg.get_rect(topleft=self.rect.move(0, -10).topleft)
         self.do_attack(group)
 
     def draw(self, screen):
@@ -138,7 +138,6 @@ class Unit(Sprite):
                 vec = dist.normalize() * self.speed
                 if not pygame.sprite.spritecollideany(self, group, self.__collided):
                     self.rect.move_ip(vec)
-                    self.health_bar_rect.move_ip(vec)
                     self.walking = True
                     return
         self.walking = False
