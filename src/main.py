@@ -56,6 +56,7 @@ class GameState:
         self.stats_text = pygame.sprite.Group()
         self.all_notifications = pygame.sprite.Group()
 
+        self.title_screen = pygame.image.load(ASSETS_DIR / "title_screen/title.png").convert()
         self.room_bg = pygame.image.load(ASSETS_DIR / "background.png").convert()
         self.game_over_bg = pygame.image.load(ASSETS_DIR / "game_over" / "background.png").convert()
 
@@ -116,13 +117,14 @@ class GameState:
         self.stats_text.empty()
         self.all_notifications.empty()
         if self.screen_state == GameState.States.TITLE_SCREEN:
-            self.bg_surf = self.room_bg
+            self.bg_surf = self.title_screen
+
             TextArea(
                 self.font,
-                "GAME TITLE HERE",
+                "[M] Mute music/sounds",
                 BLACK,
                 self.all_text,
-                center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 100),
+                center=(SCREEN_WIDTH - 110, SCREEN_HEIGHT - 15),
             )
 
             TextArea(
@@ -130,7 +132,7 @@ class GameState:
                 "Choose 5 units to start with below:",
                 BLACK,
                 self.all_text,
-                center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 - 70),
+                center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 50),
             )
 
             for i, class_type in enumerate([Warrior, Ranger, Mage]):
@@ -139,7 +141,7 @@ class GameState:
                     f"{class_type.__name__}s:",
                     BLACK,
                     self.all_text,
-                    topright=(SCREEN_WIDTH / 2 - 50, SCREEN_HEIGHT / 2 + (50 * i)),
+                    topright=(SCREEN_WIDTH / 2 - 50, (SCREEN_HEIGHT - 225) + (50 * i)),
                 )
                 class_left_arrow = TitleScreenArrow(
                     -1,
@@ -166,7 +168,7 @@ class GameState:
                 ASSETS_DIR / "title_screen" / "play_button.png",
                 self.__title_screen_play_click,
                 self.all_text,
-                center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 200)
+                center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 250)
             )
 
         elif self.screen_state == GameState.States.GAME_SCREEN:
