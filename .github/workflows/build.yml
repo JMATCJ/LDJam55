@@ -19,7 +19,7 @@ jobs:
           - os: macos-12
             TARGET: macOS
             ARTIFACT_NAME: StormTheCastle_macOS_x86
-            OUT_FILE_NAME: StormTheCastle.app
+            OUT_FILE_NAME: StormTheCastle.zip
             CMD_BUILD: >
               pyinstaller -F -w -n StormTheCastle --osx-bundle-identifier "com.github.jmatcj.ld55" --add-data "assets:assets" -i "icon.icns" src/main.py &&
               cd dist/ &&
