@@ -19,7 +19,7 @@ def attack_3_to_2(scale: int) -> int:
 
 
 class Unit(Sprite):
-    image_folder_name = None
+    asset_dir_name = None
     health = 0
     attack = 0
     speed = 0
@@ -31,6 +31,9 @@ class Unit(Sprite):
     health_bar_fg_green = None
     health_bar_fg_red = None
     is_enemy = False
+    footsteps = []
+    attack_sounds = []
+    damage_sounds = []
 
     def __init__(
         self,
@@ -49,24 +52,24 @@ class Unit(Sprite):
 
         # Surfaces
         self.standing_surf = smoothscale(
-            image.load(ASSETS_DIR / type(self).image_folder_name / "standing.png").convert_alpha(),
+            image.load(ASSETS_DIR / type(self).asset_dir_name / "standing.png").convert_alpha(),
             (64, 64),
         )
         self.attacking_surf = smoothscale(
             image.load(
-                ASSETS_DIR / type(self).image_folder_name / "attacking.png"
+                ASSETS_DIR / type(self).asset_dir_name / "attacking.png"
             ).convert_alpha(),
             (64, 64),
         )
         self.walking_1_surf = smoothscale(
             image.load(
-                ASSETS_DIR / type(self).image_folder_name / "walking_1.png"
+                ASSETS_DIR / type(self).asset_dir_name / "walking_1.png"
             ).convert_alpha(),
             (64, 64),
         )
         self.walking_2_surf = smoothscale(
             image.load(
-                ASSETS_DIR / type(self).image_folder_name / "walking_2.png"
+                ASSETS_DIR / type(self).asset_dir_name / "walking_2.png"
             ).convert_alpha(),
             (64, 64),
         )
@@ -75,6 +78,25 @@ class Unit(Sprite):
             Unit.health_bar_bg = smoothscale(image.load(ASSETS_DIR / "health_bar" / "background.png").convert(), (64, 6))
             Unit.health_bar_fg_green = smoothscale(image.load(ASSETS_DIR / "health_bar" / "green.png").convert(), (64, 6))
             Unit.health_bar_fg_red = smoothscale(image.load(ASSETS_DIR / "health_bar" / "red.png").convert(), (64, 6))
+
+        if not Unit.footsteps:
+            for path in (ASSETS_DIR / "sounds" / "footsteps").glob("*.ogg"):
+                sound = pygame.mixer.Sound(path)
+                sound.set_volume(0.5)
+                Unit.footsteps.append(sound)
+        self.sound_timer = 1000
+
+        if not type(self).attack_sounds:
+            for path in (ASSETS_DIR / "sounds" / "attack" / type(self).asset_dir_name).glob("*.ogg"):
+                sound = pygame.mixer.Sound(path)
+                sound.set_volume(0.3)
+                type(self).attack_sounds.append(sound)
+
+        if not type(self).damage_sounds:
+            for path in (ASSETS_DIR / "sounds" / "damage" / type(self).asset_dir_name).glob("*.ogg"):
+                sound = pygame.mixer.Sound(path)
+                sound.set_volume(0.3)
+                type(self).damage_sounds.append(sound)
 
         # The surface that should be currently drawn
         self.image = self.standing_surf
@@ -103,14 +125,18 @@ class Unit(Sprite):
         else:
             self.image = self.standing_surf
 
-    def update(self, screen_rect, group, delta_time):
+    def update(self, game, screen_rect, group, delta_time):
         self.time_since_last_attack += delta_time
         self.animation_timer += delta_time
+        self.sound_timer += delta_time
         self.__set_surf()
         self.move_nearest_ip(group)
         self.rect.clamp_ip(screen_rect)
         self.health_bar_rect = self.health_bar_bg.get_rect(topleft=self.rect.move(0, -10).topleft)
-        self.do_attack(group)
+        self.do_attack(game, group)
+        if not game.muted and self.walking and self.sound_timer > 500:
+            random.choice(Unit.footsteps).play()
+            self.sound_timer = 0
 
     def draw(self, screen):
         screen.blit(self.image, self.rect)
@@ -142,7 +168,7 @@ class Unit(Sprite):
                     return
         self.walking = False
 
-    def do_attack(self, group: Group):
+    def do_attack(self, game, group: Group):
         if self.time_since_last_attack >= type(self).attack_speed(self.attack_speed_scale):
             attacked = pygame.sprite.spritecollide(self, group, False, self.__collided)
             if attacked:
@@ -150,22 +176,25 @@ class Unit(Sprite):
                 self.animation_timer = 0
                 for entity in attacked:
                     entity.health -= self.attack
+                    if not game.muted and type(entity) is not Chest:
+                        random.choice(type(entity).damage_sounds).play()
                     if entity.health <= 0:
                         entity.kill()
-                    print(
-                        f"{type(self).__name__} health: {self.health} | {type(entity).__name__} health: {entity.health}"
-                    )
                     if not self.aoe_attack:
                         break
+                if not game.muted:
+                    random.choice(type(self).attack_sounds).play()
                 self.time_since_last_attack = 0
 
 
 class Warrior(Unit):
-    image_folder_name = "knight"
+    asset_dir_name = "knight"
     health = 5
     attack = 2
     speed = 5
     attack_speed = attack_2_to_1
+    attack_sounds = []
+    damage_sounds = []
 
     def __init__(self, centerpos: tuple[int, int], *groups):
         super().__init__(centerpos, *groups)
@@ -179,12 +208,14 @@ class Warrior(Unit):
 
 
 class Ranger(Unit):
-    image_folder_name = "ranger"
+    asset_dir_name = "ranger"
     health = 3
     attack = 3
     speed = 6
     attack_speed = attack_2_to_1
     attack_distance = 200
+    attack_sounds = []
+    damage_sounds = []
 
     def __init__(self, centerpos: tuple[int, int], *groups):
         super().__init__(centerpos, *groups)
@@ -198,13 +229,15 @@ class Ranger(Unit):
 
 
 class Mage(Unit):
-    image_folder_name = "mage"
+    asset_dir_name = "mage"
     health = 1
     attack = 5
     speed = 4
     attack_speed = attack_3_to_2
     attack_distance = 300
     aoe_attack = True
+    attack_sounds = []
+    damage_sounds = []
 
     def __init__(self, centerpos: tuple[int, int], *groups):
         super().__init__(centerpos, *groups)
@@ -218,12 +251,14 @@ class Mage(Unit):
 
 
 class Skeleton(Unit):
-    image_folder_name = "skeleton"
+    asset_dir_name = "skeleton"
     health = 3
     attack = 1
     speed = 3
     attack_speed = attack_2_to_1
     is_enemy = True
+    attack_sounds = []
+    damage_sounds = []
 
     def __init__(self, centerpos: tuple[int, int], *groups):
         super().__init__(centerpos, *groups)
@@ -237,12 +272,14 @@ class Skeleton(Unit):
 
 
 class Zombie(Unit):
-    image_folder_name = "zombie"
+    asset_dir_name = "zombie"
     health = 2
     attack = 2
     speed = 2
     attack_speed = attack_2_to_1
     is_enemy = True
+    attack_sounds = []
+    damage_sounds = []
 
     def __init__(self, centerpos: tuple[int, int], *groups):
         super().__init__(centerpos,  *groups)
@@ -275,9 +312,9 @@ class Chest(Sprite):
         self.random_class = random.choice([Warrior, Ranger, Mage])
         self.random_stat = random.randint(0, 3)
 
-    def update(self, screen_rect, group, delta_time):
+    def update(self, game, screen_rect, group, delta_time):
         self.rect.clamp_ip(screen_rect)
-        self.health_bar_rect.clamp_ip(screen_rect)
+        self.health_bar_rect = Unit.health_bar_bg.get_rect(topleft=self.rect.move(0, -10).topleft)
 
     def draw(self, screen):
         screen.blit(self.image, self.rect)
@@ -381,14 +418,18 @@ class TitleScreenArrow(Sprite):
         self.image = smoothscale(image.load(ASSETS_DIR / "title_screen" / "arrow.png").convert_alpha(), (51, 20))
         if arrow_type == -1:
             self.image = flip(self.image, True, False)
+        self.sound = pygame.mixer.Sound(ASSETS_DIR / "sounds" / "button" / ("arrow_down.ogg" if self.arrow_type == -1 else "arrow_up.ogg"))
+        self.sound.set_volume(0.5)
         self.rect = self.image.get_rect(**pos)
 
     def handle_click(self, game):
         if sum(game.playable_units.values()) + self.arrow_type > 5:
             return
+        if self.arrow_type == -1 and game.playable_units[self.class_type] == 0:
+            return
         game.playable_units[self.class_type] += self.arrow_type
-        if game.playable_units[self.class_type] < 0:
-            game.playable_units[self.class_type] = 0
+        if not game.muted:
+            self.sound.play()
 
 
 class Button(Sprite):

@@ -13,17 +13,17 @@ jobs:
         include:
           - os: windows-latest
             TARGET: Windows
-            ARTIFACT_NAME: LDJam55_Windows
-            OUT_FILE_NAME: LDJam55.exe
-            CMD_BUILD: pyinstaller -F -w -n LDJam55 --add-data "assets;assets" src/main.py
+            ARTIFACT_NAME: StormTheCastle_Windows
+            OUT_FILE_NAME: StormTheCastle.exe
+            CMD_BUILD: pyinstaller -F -w -n StormTheCastle --add-data "assets;assets" -i "icon.ico" src/main.py
           - os: macos-12
             TARGET: macOS
-            ARTIFACT_NAME: LDJam55_macOS_x86
-            OUT_FILE_NAME: LDJam55.app
+            ARTIFACT_NAME: StormTheCastle_macOS_x86
+            OUT_FILE_NAME: StormTheCastle.app
             CMD_BUILD: >
-              pyinstaller -F -w -n LDJam55 --osx-bundle-identifier "com.github.jmatcj.ld55" --add-data "assets:assets" src/main.py &&
+              pyinstaller -F -w -n StormTheCastle --osx-bundle-identifier "com.github.jmatcj.ld55" --add-data "assets:assets" -i "icon.icns" src/main.py &&
               cd dist/ &&
-              zip -r9 LDJam55 LDJam55.app/
+              zip -r9 StormTheCastle StormTheCastle.app/
     steps:
       - name: Checkout
         uses: actions/checkout@v4

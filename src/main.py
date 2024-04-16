@@ -9,6 +9,7 @@ from pygame.locals import (
     K_2,
     K_3,
     K_i,
+    K_m,
 )
 import random
 
@@ -34,7 +35,7 @@ class GameState:
         GAME_SCREEN = enum.auto()
         GAME_OVER = enum.auto()
 
-    def __init__(self, state: States, muted: bool):
+    def __init__(self, state: States):
         # Set initial values for game states
         self.screen_state = state
         self.font = pygame.font.Font(ASSETS_DIR / "font" / "morris-roman.black.ttf", 24)
@@ -59,8 +60,12 @@ class GameState:
         self.title_screen = pygame.image.load(ASSETS_DIR / "title_screen/title.png").convert()
         self.room_bg = pygame.image.load(ASSETS_DIR / "background.png").convert()
         self.game_over_bg = pygame.image.load(ASSETS_DIR / "game_over" / "background.png").convert()
+        self.play_button_sound = pygame.mixer.Sound(ASSETS_DIR / "sounds" / "button" / "play_again.ogg")
+        self.play_button_sound.set_volume(0.5)
 
         self.bg_surf = self.room_bg
+
+        self.muted = False
 
         self.build_screen()
 
@@ -171,6 +176,11 @@ class GameState:
                 center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 250)
             )
 
+            pygame.mixer.music.load(ASSETS_DIR / "music" / "title_screen.ogg")
+            pygame.mixer.music.set_volume(0.20)
+            if not self.muted:
+                pygame.mixer.music.play(loops=-1)
+
         elif self.screen_state == GameState.States.GAME_SCREEN:
             self.bg_surf = self.room_bg
             self.warrior_text = UpdatableTextArea(
@@ -239,6 +249,11 @@ class GameState:
             )
 
             self.generate_room()
+
+            pygame.mixer.music.load(ASSETS_DIR / "music" / "gameplay.ogg")
+            pygame.mixer.music.set_volume(0.20)
+            if not self.muted:
+                pygame.mixer.music.play(loops=-1)
         elif self.screen_state == GameState.States.GAME_OVER:
             self.bg_surf = self.game_over_bg
 
@@ -250,10 +265,15 @@ class GameState:
                 center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 230)
             )
 
+            pygame.mixer.music.load(ASSETS_DIR / "music" / "gameover.ogg")
+            pygame.mixer.music.set_volume(0.30)
+            if not self.muted:
+                pygame.mixer.music.play()
+
     def update(self, screen, delta_time):
         if self.screen_state == GameState.States.GAME_SCREEN:
-            self.all_players.update(screen.get_rect(), self.all_enemies, delta_time)
-            self.all_enemies.update(screen.get_rect(), self.all_players, delta_time)
+            self.all_players.update(self, screen.get_rect(), self.all_enemies, delta_time)
+            self.all_enemies.update(self, screen.get_rect(), self.all_players, delta_time)
 
             if len(self.all_players) + sum(self.playable_units.values()) <= 0:
                 # Game over
@@ -300,9 +320,19 @@ class GameState:
         if self.show_stats:
             self.stats_text.draw(screen)
 
+    def toggle_mute(self):
+        self.muted = not self.muted
+        if self.muted:
+            pygame.mixer.music.stop()
+        else:
+            loops = -1 if self.screen_state != GameState.States.GAME_OVER else 0
+            pygame.mixer.music.play(loops=loops)
+
     def __title_screen_play_click(self):
         if sum(self.playable_units.values()) == 5:
             self.transition_state(GameState.States.GAME_SCREEN)
+            if not self.muted:
+                self.play_button_sound.play()
 
     def __game_over_play_click(self):
         for unit in [Warrior, Ranger, Mage, Skeleton, Zombie]:
@@ -310,15 +340,20 @@ class GameState:
 
         self.selected_unit = Warrior
         self.transition_state(GameState.States.TITLE_SCREEN)
+        if not self.muted:
+            self.play_button_sound.play()
 
 
 pygame.init()
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Storm the Castle")
-clock = pygame.time.Clock()
+icon = pygame.image.load(ASSETS_DIR / "logo.png")
+pygame.display.set_icon(icon)
 
-game = GameState(GameState.States.TITLE_SCREEN, False)
+game = GameState(GameState.States.TITLE_SCREEN)
+
+clock = pygame.time.Clock()
 
 running = True
 delta_time = 0
@@ -338,6 +373,8 @@ while running:
                     if hasattr(sprite, "handle_click"):
                         sprite.handle_click(game)
         elif event.type == KEYDOWN:
+            if event.key == K_m:
+                game.toggle_mute()
             if game.screen_state == GameState.States.GAME_SCREEN:
                 if event.key == K_1:
                     game.selected_unit = Warrior
